@@ -1,0 +1,1 @@
+rubyscript2exe.rb demo.rb --rubyscript2exe-tk
