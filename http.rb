@@ -11,7 +11,8 @@ numberOfMaxHitsPerPage = 10000 #max on the web front is 99
 
 separator = '#' #separator for attributes in file
 
-categories = ['Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible'] #things to crawl out of web page
+#things to crawl out of web page, array order determines the order in the file
+categories = ['Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible']
 
 fileName = 'export.csv'
 
@@ -44,7 +45,6 @@ def removeDust(string)
     #remove HTML tags, if there are any
     string.gsub!(/<.+?>/, '') unless ((string =~ /<.+?>/) == nil)
 
-
     #convert &nbsp; into blanks
     string.gsub!(/&nbsp;/, ' ')
 
@@ -53,10 +53,8 @@ def removeDust(string)
     string.gsub!(/\n/, '')
     string.gsub!(/\t/, '')
 
-
     #remove blanks at end
     string.strip!
-
 
     #convert multiple blanks into single blanks
     string.gsub!(/\ +/, ' ')
@@ -76,12 +74,16 @@ end
 # second, crawl each page
 # third, write all to file
 
-results = Array.new
+################################################################################
+# STEP 1: find all law ids
+################################################################################
+
+#array containing all law ids
+lawIDs = Array.new
 
 types.each do |type|
 
-    puts "retrieving " + type + "..."
-
+    puts "looking for #{type} laws..."
     # start query for current type
     # todo: key => value, damit mans besser lesen kann
     response = Net::HTTP.start('ec.europa.eu').post("/prelex/liste_resultats.cfm?CL=en", "doc_typ=&docdos=dos&requete_id=0&clef1=" + type + "&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=2000&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=" + numberOfMaxHitsPerPage.to_s + "&first_element=1&type_affichage=1")
@@ -98,86 +100,113 @@ types.each do |type|
 
     lastEntry, maxEntries = lastEntryOnPage.split("/", 2)
 
+    #TODO:EXCEOTION werfen
     puts "ALARM" unless lastEntry == maxEntries
-
-    puts maxEntries + " entries found"
 
 
     # second, the pagination buttons must not be present (at least no "page 2" button)
+    #TODO:EXCEOTION werfen
     puts "ALARM" unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
 
 
-
-    # fetch out links for each single law
-    lawIDs = (content.scan /\d{1,6}(?=" title="Click here to reach the detail page of this file">)/).uniq
-    puts lawIDs
+    puts "#{maxEntries} laws found for #{type}"
 
 
-    # for each lawID, submit HTTP GET request for fetching out the information of interest
-    lawIDs.each do |lawID|
-        puts "retrieving law ##{lawID}"
-        response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
-        content = response.body
+    #fetch out ids for each single law as array and append it to the current set of ids
+    #the uniq! removes double ids (<a href="id">id</a>)
+    lawIDs += (content.scan /\d{1,6}(?=" title="Click here to reach the detail page of this file">)/).uniq!
 
-        # prepare array containing all information for the current law
-        arrayEntry = Hash.new
+end
 
-        # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
+#now, all law IDs are contained in the array
 
+#assure that there are no doublicated ids in the array (which should not be the case)
+numberOfLaws = lawIDs.size
+lawIDs.uniq!
 
-        # TODO: warum ist der erste anders als die anderen?
+#TODO: excepotion
+puts "ALARM, es gab id-dopplungen" if lawIDs.size != numberOfLaws
 
-        # find out the value for "fields of activity"
-        fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
-        fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
-        fieldsOfActivity.gsub!(/<br>\s*<\/font>\s*<\/td>/, '')
-        fieldsOfActivity = removeDust(fieldsOfActivity)
-        arrayEntry["Fields of activity"] = fieldsOfActivity
+puts "#{numberOfLaws} laws found in total"
 
 
-        # find out the value for "legal basis"
-        legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-        legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
-        legalBasis = removeDust(legalBasis)
-        arrayEntry["Legal basis"] = legalBasis
+################################################################################
+# STEP 2: crawl each page
+################################################################################
+
+        #array containing all law information
+results = Array.new
 
 
-        # find out the value for "procedures"
-        procedures = content[/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-        procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
-        # convert all \t resp. \r\n into blanks
-        procedures = removeDust(procedures)
-        arrayEntry["Procedures"] = procedures
+# for each lawID, submit HTTP GET request for fetching out the information of interest
+currentLaw = 1
+lawIDs.each do |lawID|
+    puts "retrieving law ##{lawID} (#{currentLaw}/#{numberOfLaws})"
+    response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
+    content = response.body
+
+    # prepare array containing all information for the current law
+    arrayEntry = Hash.new
+
+    # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
 
 
-        # find out the value for "type of file"
-        typeOfFile = content[/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-        typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
-        # convert all \t resp. \r\n into blanks
-        typeOfFile = removeDust(typeOfFile)
-        arrayEntry["Type of File"] = typeOfFile
+    # TODO: warum ist der erste anders als die anderen?
+
+    # find out the value for "fields of activity"
+    fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
+    fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
+    fieldsOfActivity.gsub!(/<br>\s*<\/font>\s*<\/td>/, '')
+    fieldsOfActivity = removeDust(fieldsOfActivity)
+    arrayEntry["Fields of activity"] = fieldsOfActivity
 
 
-        # find out the value for "primarily responsible"
-        primarilyResponsible = content[/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*?(?=<\/tr>)/m]
-        primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '')
-        # convert all \t resp. \r\n into blanks
-        primarilyResponsible = removeDust(primarilyResponsible)
-        arrayEntry["Primarily Responsible"] = primarilyResponsible
+    # find out the value for "legal basis"
+    legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+    legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
+    legalBasis = removeDust(legalBasis)
+    arrayEntry["Legal basis"] = legalBasis
 
+
+    # find out the value for "procedures"
+    procedures = content[/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+    procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
+    # convert all \t resp. \r\n into blanks
+    procedures = removeDust(procedures)
+    arrayEntry["Procedures"] = procedures
+
+
+    # find out the value for "type of file"
+    typeOfFile = content[/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+    typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
+    # convert all \t resp. \r\n into blanks
+    typeOfFile = removeDust(typeOfFile)
+    arrayEntry["Type of File"] = typeOfFile
+
+
+    # find out the value for "primarily responsible"
+    primarilyResponsible = content[/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*?(?=<\/tr>)/m]
+    primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '')
+    # convert all \t resp. \r\n into blanks
+    primarilyResponsible = removeDust(primarilyResponsible)
+    arrayEntry["Primarily Responsible"] = primarilyResponsible
 
 
 #        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
 
-        #add the law, processed above
-        results << arrayEntry
+    #add the law, processed above
+    results << arrayEntry
 
-    end
+    currentLaw += 1
+
+end
+
+#results[0].each {|i, j| puts "#{i} => #{j}"; puts}
 
 
-
-results[0].each {|i, j| puts "#{i} => #{j}"; puts}
-
+################################################################################
+# STEP 3: write all to file
+################################################################################
 
 file = File.new(fileName, "w")
 
@@ -224,6 +253,6 @@ exit 0
   #read out number of results (e.g. 13
 
   #response.body.
-end
+
 
 
