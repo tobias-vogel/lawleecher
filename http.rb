@@ -6,7 +6,15 @@ require 'net/http'
 
 #types = ["CNS", "COD", "SYN", "AVC"]
 types = ["AVC"]
+
 numberOfMaxHitsPerPage = 10000 #max on the web front is 99
+
+separator = '#' #separator for attributes in file
+
+categories = ['Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible'] #things to crawl out of web page
+
+fileName = 'export.csv'
+
 
 
 ################################################################################
@@ -33,6 +41,10 @@ end
 #maintains single word spacing blanks
 def removeDust(string)
 
+    #remove HTML tags, if there are any
+    string.gsub!(/<.+?>/, '') unless ((string =~ /<.+?>/) == nil)
+
+
     #convert &nbsp; into blanks
     string.gsub!(/&nbsp;/, ' ')
 
@@ -41,11 +53,13 @@ def removeDust(string)
     string.gsub!(/\n/, '')
     string.gsub!(/\t/, '')
 
+
+    #remove blanks at end
+    string.strip!
+
+
     #convert multiple blanks into single blanks
     string.gsub!(/\ +/, ' ')
-
-    #remove HTML tags, if there are any
-    string.gsub!(/<.+?>/, '') unless ((string =~ /<.+?>/) == nil)
 
     return string
 end
@@ -57,6 +71,10 @@ end
 ################################################################################
 # program
 ################################################################################
+# algorithm:
+# first, find all law ids to have a maximum number for the progress bar
+# second, crawl each page
+# third, write all to file
 
 results = Array.new
 
@@ -111,7 +129,7 @@ types.each do |type|
 
         # find out the value for "fields of activity"
         fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
-        fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*(?=.*)/m, '')
+        fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
         fieldsOfActivity.gsub!(/<br>\s*<\/font>\s*<\/td>/, '')
         fieldsOfActivity = removeDust(fieldsOfActivity)
         arrayEntry["Fields of activity"] = fieldsOfActivity
@@ -119,14 +137,14 @@ types.each do |type|
 
         # find out the value for "legal basis"
         legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-        legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>(?=.*)/m, '')
+        legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
         legalBasis = removeDust(legalBasis)
         arrayEntry["Legal basis"] = legalBasis
 
 
         # find out the value for "procedures"
         procedures = content[/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-        procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>(?=.*?<\/tr>)/m, '')
+        procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
         # convert all \t resp. \r\n into blanks
         procedures = removeDust(procedures)
         arrayEntry["Procedures"] = procedures
@@ -134,7 +152,7 @@ types.each do |type|
 
         # find out the value for "type of file"
         typeOfFile = content[/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-        typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>(?=.*?<\/tr>)/m, '')
+        typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
         # convert all \t resp. \r\n into blanks
         typeOfFile = removeDust(typeOfFile)
         arrayEntry["Type of File"] = typeOfFile
@@ -142,7 +160,7 @@ types.each do |type|
 
         # find out the value for "primarily responsible"
         primarilyResponsible = content[/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*?(?=<\/tr>)/m]
-        primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>(?=.*?<\/tr>)/, '')
+        primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '')
         # convert all \t resp. \r\n into blanks
         primarilyResponsible = removeDust(primarilyResponsible)
         arrayEntry["Primarily Responsible"] = primarilyResponsible
@@ -160,9 +178,6 @@ types.each do |type|
 
 results[0].each {|i, j| puts "#{i} => #{j}"; puts}
 
-separator = '#'
-categories = ['Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible']
-fileName = 'export.csv'
 
 file = File.new(fileName, "w")
 
