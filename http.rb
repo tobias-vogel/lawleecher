@@ -20,12 +20,38 @@ def fetch(uri_str, limit = 10)
 
     response = Net::HTTP.get_response(URI.parse(uri_str))
     case response
-        when Net::HTTPSuccess     then response
+        when Net::HTTPSuccess then response
         when Net::HTTPRedirection then fetch(response['location'], limit - 1)
     else
         response.error!
     end
 end
+
+
+
+#removes whitespaces and HTML tags from a given string
+#maintains single word spacing blanks
+def removeDust(string)
+
+    #convert &nbsp; into blanks
+    string.gsub!(/&nbsp;/, ' ')
+
+    #remove whitespaces
+    string.gsub!(/\r/, '')
+    string.gsub!(/\n/, '')
+    string.gsub!(/\t/, '')
+
+    #convert multiple blanks into single blanks
+    string.gsub!(/\ +/, ' ')
+
+    #remove HTML tags, if there are any
+    string.gsub!(/<.+?>/, '') unless ((string =~ /<.+?>/) == nil)
+
+    return string
+end
+
+
+
 
 
 ################################################################################
@@ -81,29 +107,87 @@ types.each do |type|
         # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
 
 
+        # TODO: warum ist der erste anders als die anderen?
+
         # find out the value for "fields of activity"
         fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
-        fieldsOfActivity = fieldsOfActivity.gsub(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*(?=.* )/, '')
-        fieldsOfActivity = fieldsOfActivity.gsub(/ &nbsp;<br>\s*<\/font>\s*<\/td>*/, '')
+        fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*(?=.*)/m, '')
+        fieldsOfActivity.gsub!(/<br>\s*<\/font>\s*<\/td>/, '')
+        fieldsOfActivity = removeDust(fieldsOfActivity)
         arrayEntry["Fields of activity"] = fieldsOfActivity
 
 
         # find out the value for "legal basis"
-        legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-        legalBasis = legalBasis.gsub(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>(?=.*)/, '')
-        # convert all \t resp. \r\n into blanks
-        legalBasis = legalBasis.gsub(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>(?=.*)/, '')
-exit(0)
+        legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+        legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>(?=.*)/m, '')
+        legalBasis = removeDust(legalBasis)
         arrayEntry["Legal basis"] = legalBasis
 
 
+        # find out the value for "procedures"
+        procedures = content[/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+        procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>(?=.*?<\/tr>)/m, '')
+        # convert all \t resp. \r\n into blanks
+        procedures = removeDust(procedures)
+        arrayEntry["Procedures"] = procedures
+
+
+        # find out the value for "type of file"
+        typeOfFile = content[/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+        typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>(?=.*?<\/tr>)/m, '')
+        # convert all \t resp. \r\n into blanks
+        typeOfFile = removeDust(typeOfFile)
+        arrayEntry["Type of File"] = typeOfFile
+
+
+        # find out the value for "primarily responsible"
+        primarilyResponsible = content[/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*?(?=<\/tr>)/m]
+        primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>(?=.*?<\/tr>)/, '')
+        # convert all \t resp. \r\n into blanks
+        primarilyResponsible = removeDust(primarilyResponsible)
+        arrayEntry["Primarily Responsible"] = primarilyResponsible
 
 
 
+#        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
 
+        #add the law, processed above
+        results << arrayEntry
 
-        puts arrayEntry.inspect
     end
+
+
+
+results[0].each {|i, j| puts "#{i} => #{j}"; puts}
+
+separator = '#'
+categories = ['Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible']
+fileName = 'export.csv'
+
+file = File.new(fileName, "w")
+
+#write header in file
+file.puts categories.join(separator)
+
+#write data in file
+results.each do |law|
+    temp = Array.new
+    categories.each do |category|
+        temp << law[category]
+    end
+
+    file.puts temp.join(separator)
+end
+
+#file.puts law.values.join(separator)}
+
+
+puts "#{results.size} laws written into #{fileName}"
+exit 0
+
+
+
+
 
 
 
