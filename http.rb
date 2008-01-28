@@ -5,10 +5,11 @@ require 'net/http'
 ################################################################################
 
 types = ["CNS", "COD", "SYN", "AVC"]
-types = ["AVC"]
+#types = ["AVC"]
 
 #year, empty string for "all years"
-year = '1998'
+year = ''
+#year = '1998'
 
 numberOfMaxHitsPerPage = 10000 #max on the web front is 99
 
