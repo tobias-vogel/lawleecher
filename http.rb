@@ -20,7 +20,8 @@ categories = ['Fields of activity', 'Legal basis', 'Procedures', 'Type of File',
 
 fileName = 'export.csv'
 
-
+#flag signalling whether there has been at least one error, if flag is set
+thereHaveBeenErrors = false
 
 ################################################################################
 # helper function which gets redirection requests up to 10 steps deep
@@ -150,76 +151,114 @@ results = Array.new
 currentLaw = 1
 lawIDs.each do |lawID|
 
-    startTime = Time.now
+#lawID = 164360
 
-    puts "retrieving law ##{lawID} (#{currentLaw}/#{numberOfLaws})"
-    response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
-    content = response.body
+    begin # start try block
 
-    # prepare array containing all information for the current law
-    arrayEntry = Hash.new
+        startTime = Time.now
 
-    # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
+        puts "retrieving law ##{lawID} (#{currentLaw}/#{numberOfLaws})"
+        response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
+        content = response.body
 
+        # prepare array containing all information for the current law
+        arrayEntry = Hash.new
 
-    # TODO: warum ist der erste anders als die anderen?
-
-    # find out the value for "fields of activity"
-    fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
-    fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
-    #fieldsOfActivity.gsub!(/<br>\s*<\/font>\s*<\/td>/, '')
-    fieldsOfActivity = removeDust(fieldsOfActivity)
-    arrayEntry['Fields of activity'] = fieldsOfActivity
+        # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
 
 
-    # find out the value for "legal basis"
-    legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-    legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
-    legalBasis = removeDust(legalBasis)
-    arrayEntry['Legal basis'] = legalBasis
+        # find out the value for "fields of activity"
+        begin
+            fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
+            fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
+            fieldsOfActivity = removeDust(fieldsOfActivity)
+        rescue
+            #this law does not have "fields of activity" data
+            fieldsOfActivity = ''
+        end
+        arrayEntry['Fields of activity'] = fieldsOfActivity
 
 
-    # find out the value for "procedures"
-    procedures = content[/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-    procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
-    # convert all \t resp. \r\n into blanks
-    procedures = removeDust(procedures)
-    arrayEntry['Procedures'] = procedures
 
 
-    # find out the value for "type of file"
-    typeOfFile = content[/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-    typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
-    # convert all \t resp. \r\n into blanks
-    typeOfFile = removeDust(typeOfFile)
-    arrayEntry['Type of File'] = typeOfFile
+        # find out the value for "legal basis"
+        begin
+            legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+            legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
+            legalBasis = removeDust(legalBasis)
+        rescue
+            #this law does not have "legal basis" data
+            legalBasis = ''
+        end
+        arrayEntry['Legal basis'] = legalBasis
 
 
-    # find out the value for "primarily responsible"
-    primarilyResponsible = content[/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*?(?=<\/tr>)/m]
-    # primarily responsible may be empty
-    if primarilyResponsible == nil
-        primarilyResponsible == ''
-    else
-        primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '')
-        # convert all \t resp. \r\n into blanks
-        primarilyResponsible = removeDust(primarilyResponsible)
-    end
-    arrayEntry['Primarily Responsible'] = primarilyResponsible
 
 
-    endTime = Time.now
+        # find out the value for "procedures"
+        begin
+            procedures = content[/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+            procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
+            # convert all \t resp. \r\n into blanks
+            procedures = removeDust(procedures)
+        rescue
+            #this law does not have "procedures" data
+            procedures = ''
+        end
+        arrayEntry['Procedures'] = procedures
 
-    arrayEntry['Duration'] = endTime - startTime
 
+
+
+        # find out the value for "type of file"
+        begin
+            typeOfFile = content[/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+            typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
+            # convert all \t resp. \r\n into blanks
+            typeOfFile = removeDust(typeOfFile)
+        rescue
+            #this law does not have "type of file" data
+            typeOfFile = ''
+        end
+        arrayEntry['Type of File'] = typeOfFile
+
+
+
+
+        # find out the value for "primarily responsible"
+        begin
+            primarilyResponsible = content[/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*?(?=<\/tr>)/m]
+            primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '')
+            # convert all \t resp. \r\n into blanks
+            primarilyResponsible = removeDust(primarilyResponsible)
+        rescue
+            #this law does not have "primarily responsible" data
+            primarilyResponsible = ''
+        end
+        arrayEntry['Primarily Responsible'] = primarilyResponsible
+
+
+
+
+        endTime = Time.now
+
+        arrayEntry['Duration'] = endTime - startTime
 
 #        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
 
-    #add the law processed above
-    results << arrayEntry
+        #add the law processed above
+        results << arrayEntry
 
-    currentLaw += 1
+        currentLaw += 1
 
+
+    rescue
+        puts "There has been an error with law ##{lawID}. This law will be ignored."
+        #puts $.backtrace; end
+        thereHaveBeenErrors = true
+        raise
+    end #of exception handling
+#exit 0
 end
 
 #results[0].each {|i, j| puts "#{i} => #{j}"; puts}
@@ -248,6 +287,7 @@ end
 
 puts "#{results.size} laws written into #{fileName}"
 
+puts 'There have been errors during processing.' if thereHaveBeenErrors
 
 
 sum = 0
