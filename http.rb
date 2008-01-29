@@ -5,7 +5,7 @@ require 'net/http'
 ################################################################################
 
 types = ["CNS", "COD", "SYN", "AVC"]
-#types = ["AVC"]
+types = ["SYN"]
 
 #year, empty string for "all years"
 year = ''
@@ -174,7 +174,7 @@ lawIDs.each do |lawID|
             fieldsOfActivity = removeDust(fieldsOfActivity)
         rescue
             #this law does not have "fields of activity" data
-            fieldsOfActivity = ''
+            fieldsOfActivity = '[fehlt]'
         end
         arrayEntry['Fields of activity'] = fieldsOfActivity
 
@@ -188,7 +188,7 @@ lawIDs.each do |lawID|
             legalBasis = removeDust(legalBasis)
         rescue
             #this law does not have "legal basis" data
-            legalBasis = ''
+            legalBasis = '[fehlt]'
         end
         arrayEntry['Legal basis'] = legalBasis
 
@@ -203,7 +203,7 @@ lawIDs.each do |lawID|
             procedures = removeDust(procedures)
         rescue
             #this law does not have "procedures" data
-            procedures = ''
+            procedures = '[fehlt]'
         end
         arrayEntry['Procedures'] = procedures
 
@@ -216,9 +216,10 @@ lawIDs.each do |lawID|
             typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
             # convert all \t resp. \r\n into blanks
             typeOfFile = removeDust(typeOfFile)
+            typeOfFile
         rescue
             #this law does not have "type of file" data
-            typeOfFile = ''
+            typeOfFile = '[fehlt]'
         end
         arrayEntry['Type of File'] = typeOfFile
 
@@ -233,7 +234,7 @@ lawIDs.each do |lawID|
             primarilyResponsible = removeDust(primarilyResponsible)
         rescue
             #this law does not have "primarily responsible" data
-            primarilyResponsible = ''
+            primarilyResponsible = '[fehlt]'
         end
         arrayEntry['Primarily Responsible'] = primarilyResponsible
 
