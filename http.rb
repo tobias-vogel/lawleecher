@@ -1,4 +1,5 @@
 require 'net/http'
+require 'date/format'
 
 ################################################################################
 # declaration of some important parameters of the program
@@ -16,12 +17,15 @@ numberOfMaxHitsPerPage = 10000 #max on the web front is 99
 separator = '#' #separator for attributes in file
 
 #things to crawl out of web page, array order determines the order in the file
-categories = ['Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible']
+categories = ['Type', 'Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible']
 
 fileName = 'export.csv'
 
 #flag signalling whether there has been at least one error, if flag is set
 thereHaveBeenErrors = false
+
+#this list contains all keys for the process steps in correct order
+globalProcessStepNamesList = []
 
 ################################################################################
 # helper function which gets redirection requests up to 10 steps deep
@@ -67,6 +71,11 @@ def removeDust(string)
     return string
 end
 
+
+
+# def insertStepNameIntoglobalProcessStepNamesList(stepName)
+#     globalProcessStepNamesListif stepName
+# end
 
 
 
@@ -149,13 +158,13 @@ results = Array.new
 
 # for each lawID, submit HTTP GET request for fetching out the information of interest
 currentLaw = 1
-lawIDs.each do |lawID|
+lawIDs[1..10].each do |lawID|
 
-#lawID = 164360
+#lawID = 105604
 
     begin # start try block
 
-        startTime = Time.now
+        metaStartTime = Time.now
 
         puts "retrieving law ##{lawID} (#{currentLaw}/#{numberOfLaws})"
         response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
@@ -201,6 +210,8 @@ lawIDs.each do |lawID|
             procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
             # convert all \t resp. \r\n into blanks
             procedures = removeDust(procedures)
+            #if "procedures" contains a value for commission and council, remove the commission value
+            procedures.gsub!(/.*Commission ?: ?.*?(?=Council ?: ?)/, '') if procedures[/.*Commission.*Council.*/] != nil
         rescue
             #this law does not have "procedures" data
             procedures = '[fehlt]'
@@ -216,7 +227,8 @@ lawIDs.each do |lawID|
             typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
             # convert all \t resp. \r\n into blanks
             typeOfFile = removeDust(typeOfFile)
-            typeOfFile
+            #if "type of file" contains a value for commission and council, remove the commission value
+            typeOfFile.gsub!(/.*Commission ?: ?.*?(?=Council ?: ?)/, '') if typeOfFile[/.*Commission.*Council.*/] != nil
         rescue
             #this law does not have "type of file" data
             typeOfFile = '[fehlt]'
@@ -241,17 +253,87 @@ lawIDs.each do |lawID|
 
 
 
-        endTime = Time.now
+        # find out the law type (has been forgotten since only law IDs were saved)
+        begin
+            type = content[/<font face="Arial">\s*<font size=-1>\d{4}\/\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/]
+            type.gsub!(/<font face="Arial">\s*<font size=-1>\d{4}\/\d{4}\//, '')
+        rescue
+            #this law does not have "type" data
+            type = '[fehlt]'
+        end
+        arrayEntry['Type'] = type
 
-        arrayEntry['Duration'] = endTime - startTime
 
-#        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
+
+
+        # find out the process duration information
+        # create a hash with a time object as key and the name of the process step as value
+        # then it will be automatically sorted by time and we can give out the values one after another
+        begin
+            #puts content[40000..50000]
+            processSteps = content[/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table.*?(?=<\/table>\s*<p><u><font face="arial"><font size=-2>Activities of the institutions:)/m]
+            processSteps.gsub!(/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/, '')
+            processSteps = processSteps.split(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/)
+            processSteps.last.gsub!(/<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*/, '')
+
+
+            #iterate over processSteps, do 3 things:
+            # first, add the process step name to the global sorted list of process step
+            # second, transform date into a time object to calculate with it
+            # third, build up Hash (step name => timestamp)
+            stepTimeHash = {}
+
+            # create the variable here to have a scope over the next iterator
+            @timeOfFirstStep = nil
+
+            processSteps.each do |step|
+
+                stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
+
+                #puts stepName + " => " + timeStamp
+
+                #first (add to global list)
+                #insertStepNameIntoglobalProcessStepNamesList(stepName)
+                globalProcessStepNamesList << stepName if globalProcessStepNamesList.index(stepName) == nil
+
+                #second (parse date)
+                parsedDate = Date._parse timeStamp
+                time = Time.utc parsedDate[:year], parsedDate[:mon], parsedDate[:mday]
+
+                valueToInsert = timeStamp
+
+                if @timeOfFirstStep == nil
+                    @timeOfFirstStep = time
+                else
+                    #calculate the difference between first and current timeStamp
+                    duration = ((time - @timeOfFirstStep) / 60 / 60 / 24).floor
+                    valueToInsert = duration
+                end
+
+                #third (build up hash)
+                stepTimeHash[stepName] = valueToInsert
+            end
+            arrayEntry['DurationInformation'] = stepTimeHash
+
+#stepTimeHash.each {|i| puts i}
+
+
+
+
+        rescue
+           puts 'Something went wrong during calculation of process step duration'
+           puts backtrace
+        end
+
+
+
+        metaEndTime = Time.now
+        arrayEntry['MetaDuration'] = metaEndTime - metaStartTime
 
         #add the law processed above
         results << arrayEntry
 
         currentLaw += 1
-
 
     rescue
         puts "There has been an error with law ##{lawID}. This law will be ignored."
@@ -259,8 +341,12 @@ lawIDs.each do |lawID|
         thereHaveBeenErrors = true
         raise
     end #of exception handling
-#exit 0
+
+#        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
 end
+
+
+#puts globalProcessStepNamesList
 
 #results[0].each {|i, j| puts "#{i} => #{j}"; puts}
 
@@ -272,13 +358,17 @@ end
 file = File.new(fileName, "w")
 
 #write header in file
-file.puts categories.join(separator)
+file.puts((categories + globalProcessStepNamesList).join(separator))
 
 #write data in file
 results.each do |law|
     temp = Array.new
     categories.each do |category|
         temp << law[category]
+    end
+
+    globalProcessStepNamesList.each do |processStepName|
+         temp << law['DurationInformation'].values_at(processStepName) if law['DurationInformation'].key?(processStepName)
     end
 
     file.puts temp.join(separator)
@@ -292,7 +382,7 @@ puts 'There have been errors during processing.' if thereHaveBeenErrors
 
 
 sum = 0
-results.each {|i| sum += i['Duration']}
+results.each {|i| sum += i['MetaDuration']}
 puts "total duration: #{sum / 60} minutes"
 averageDuration = sum / results.size
 puts "average duration per law: #{averageDuration} seconds"
