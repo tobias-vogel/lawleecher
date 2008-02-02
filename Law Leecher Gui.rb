@@ -1,4 +1,12 @@
 require 'gtk2'
+require 'core.rb'
+
+def rechnelange (widget)
+puts "rechnelange"
+#puts widget.class
+10000.times {|i| widget.set_fraction (100/10000*i)
+}
+end
 
 #widgets #######################################################################
 
@@ -45,23 +53,6 @@ statusLabel.text = 'noch nichts'
 
 
 
-
-# if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
-#   puts "filename = #{dialog.filename}"
-# end
-# dialog.destroy
-
-
-#progressTextLabel.set_size_request
-
-#progressBar.set_size_request 100, 20
-
-
-
-
-
-
-
 #signals #######################################################################
 
 window.signal_connect('delete_event') {Gtk::main_quit}
@@ -81,7 +72,16 @@ fileChooserButton.signal_connect('clicked') {
 }
 
 startButton.signal_connect('clicked') {
-  progressBar.set_fraction [1, progressBar.fraction + 0.1].min
+
+  10000.times {
+    progressBar.set_fraction(progressBar.fraction + 0.0001)
+    100000.times {1}
+    while Gtk.events_pending?
+      Gtk.main_iteration
+    end
+  }
+  #5.times {progressBar.set_fraction [1, progressBar.fraction + 0.1].min}
+  #rechnelange *progressBar
 }
 
 
