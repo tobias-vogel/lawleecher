@@ -1,0 +1,315 @@
+require 'net/http'
+require 'set'
+require 'configuration.rb'
+require 'date/format'
+
+class Fetcher
+  
+  def retrieveLawIDs
+    #array containing all law ids
+    lawIDs = Array.new
+    
+    Configuration.types.each do |type|
+      puts "looking for #{type} laws..."
+      # start query for current type
+      response = Net::HTTP.start('ec.europa.eu').post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=#{type}&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
+
+      content = response.body
+
+
+      # check, whether all hits are on the page
+      # there are two ways to check it, we use both for safety reasons
+
+      # first, compare the last number with the max number (e.g. 46/2110)
+      # if it's equal, all hits are on this page, which is good, otherwise: bad
+
+      lastEntryOnPage = content[/\d{1,5}\/\d{1,5}(?=<\/div>\s*<\/TD>\s*<\/TR>\s*<TR bgcolor=\"#(ffffcc|ffffff)\">\s*<TD colspan=\"2\" VALIGN=\"top\">\s*<FONT CLASS=\"texte\">.*<\/FONT>\s*<\/TD>\s*<\/TR>\s*<\/table>\s*<center>\s*<TABLE border=0 cellpadding=0 cellspacing=0>\s*<tr align=\"center\">\s*<\/tr>\s*<\/table>\s*<\/center>\s*<!-- BOTTOM NAVIGATION BAR)/]
+
+      lastEntry, maxEntries = lastEntryOnPage.split("/", 2)
+
+      raise 'Not all laws on page. (last entry != number of entries)' unless lastEntry == maxEntries
+
+
+      # second, the pagination buttons must not be present (at least no "page 2" button)
+      raise 'There are pagination buttons, not all laws would be retrieved.' unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
+
+
+      puts "#{maxEntries} laws found for #{type}"
+
+
+      #fetch out ids for each single law as array and append it to the current set of ids
+      #the uniq! removes double ids (<a href="id">id</a>)
+      lawIDsFromCurrentType = content.scan(/\d{1,6}(?=" title="Click here to reach the detail page of this file">)/)
+      lawIDsFromCurrentType.uniq! # to eliminate the twin of each law id (which is inevitably included)
+      lawIDs += lawIDsFromCurrentType
+
+    end # of current type
+
+    #now, all law IDs are contained in the array
+
+    #assure that there are no doublicated ids in the array (which should not be the case)
+    numberOfLaws = lawIDs.size
+    lawIDs.uniq!
+
+    raise 'There were laws which occured on different pages.' if lawIDs.size != numberOfLaws
+
+    puts "#{numberOfLaws} laws found in total"
+    
+    return lawIDs
+  end
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  def retrieveLawContents(lawIDs)
+    # array containing all law information
+    results = Array.new
+
+    # counter for the current law (basically for informing the user)
+    currentLawCount = 1
+    
+    # flag signalling whether there occured errors during processing
+    thereHaveBeenErrors = false
+    
+    # set of process step names (will be collected to be used for the csv file columns)
+    processStepNames = Set.new
+    
+    # for each lawID, submit HTTP GET request for fetching out the information of interest  
+    lawIDs[1..10].each do |lawID|
+#lawID = 105604
+
+      begin # start try block
+
+        # save this to calculate the average duration
+        metaStartTime = Time.now
+
+        puts "retrieving law ##{lawID} (#{currentLawCount}/#{lawIDs.size})"
+        response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
+        content = response.body
+
+        # prepare array containing all information for the current law
+        arrayEntry = Hash.new
+
+        # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
+
+
+        # find out the value for "fields of activity"
+        begin
+          fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
+          fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
+          fieldsOfActivity = clean(fieldsOfActivity)
+        rescue
+          #this law does not have "fields of activity" data
+          fieldsOfActivity = '[fehlt]'
+        end
+        arrayEntry['Fields of activity'] = fieldsOfActivity
+
+
+
+
+        # find out the value for "legal basis"
+        begin
+          legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+          legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
+          legalBasis = clean(legalBasis)
+        rescue
+          # this law does not have "legal basis" data
+          legalBasis = '[fehlt]'
+        end
+        arrayEntry['Legal basis'] = legalBasis
+
+
+
+
+        # find out the value for "procedures"
+        begin
+          procedures = content[/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+          procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
+          # convert all \t resp. \r\n into blanks
+          procedures = clean(procedures)
+          # if "procedures" contains a value for commission and council, remove the commission value
+          procedures.gsub!(/.*Commission ?: ?.*?(?=Council ?: ?)/, '') if procedures[/.*Commission.*Council.*/] != nil
+        rescue
+          # this law does not have "procedures" data
+          procedures = '[fehlt]'
+        end
+        arrayEntry['Procedures'] = procedures
+
+
+
+
+        # find out the value for "type of file"
+        begin
+          typeOfFile = content[/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
+          typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
+          # convert all \t resp. \r\n into blanks
+          typeOfFile = clean(typeOfFile)
+          #if "type of file" contains a value for commission and council, remove the commission value
+          typeOfFile.gsub!(/.*Commission ?: ?.*?(?=Council ?: ?)/, '') if typeOfFile[/.*Commission.*Council.*/] != nil
+        rescue
+          # this law does not have "type of file" data
+          typeOfFile = '[fehlt]'
+        end
+        arrayEntry['Type of File'] = typeOfFile
+
+
+
+
+        # find out the value for "primarily responsible"
+        begin
+          primarilyResponsible = content[/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*?(?=<\/tr>)/m]
+          primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '')
+          # convert all \t resp. \r\n into blanks
+          primarilyResponsible = clean(primarilyResponsible)
+        rescue
+          # this law does not have "primarily responsible" data
+          primarilyResponsible = '[fehlt]'
+        end
+        arrayEntry['Primarily Responsible'] = primarilyResponsible
+
+
+
+
+        # find out the law type (has been forgotten since only law IDs were saved)
+        begin
+          type = content[/<font face="Arial">\s*<font size=-1>\d{4}\/\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/]
+          type.gsub!(/<font face="Arial">\s*<font size=-1>\d{4}\/\d{4}\//, '')
+        rescue
+          # this law does not have "type" data
+          type = '[fehlt]'
+        end
+        arrayEntry['Type'] = type
+
+
+
+
+        # find out the process duration information
+        # create a hash with a time object as key and the name of the process step as value
+        # then it will be automatically sorted by time and we can give out the values one after another
+        begin
+          #puts content[40000..50000]
+          processSteps = content[/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table.*?(?=<\/table>\s*<p><u><font face="arial"><font size=-2>Activities of the institutions:)/m]
+          processSteps.gsub!(/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/, '')
+          processSteps = processSteps.split(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/)
+          processSteps.last.gsub!(/<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*/, '')
+
+
+          # iterate over processSteps, do 3 things:
+          # first, add the process step name to the global list of process steps
+          # second, transform date into a time object to calculate with it
+          # third, build up Hash (step name => timestamp resp. difference)
+          #stepTimeHash = {}
+
+          # create the variable here to have a scope over the next iterator
+          @timeOfFirstStep = nil
+
+          processSteps.each do |step|
+
+            stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
+
+            #puts stepName + " => " + timeStamp
+
+            # first (add to global list)
+            processStepNames << stepName
+
+            #second (parse date)
+            parsedDate = Date._parse timeStamp
+            time = Time.utc parsedDate[:year], parsedDate[:mon], parsedDate[:mday]
+
+            timeStampOrDuration = timeStamp
+
+            if @timeOfFirstStep == nil
+              @timeOfFirstStep = time
+            else
+              #calculate the difference between first and current timeStamp
+              duration = ((time - @timeOfFirstStep) / 60 / 60 / 24).floor
+              timeStampOrDuration = duration
+            end
+
+            #third (add duration)
+            arrayEntry[stepName] = timeStampOrDuration
+          end
+          #arrayEntry['DurationInformation'] = stepTimeHash
+
+#stepTimeHash.each {|i| puts i}
+        rescue StandardError => ex
+          puts 'Something went wrong during calculation of process step duration'
+          puts ex.message
+          puts ex.backtrace
+        end
+
+
+
+        metaEndTime = Time.now
+        arrayEntry['MetaDuration'] = metaEndTime - metaStartTime
+
+        #add all fetched information (which is stored in arrayEntry) in the results array, finally
+        results << arrayEntry
+
+        currentLawCount += 1
+
+      rescue StandardError => ex
+        puts "There has been an error with law ##{lawID}. This law will be ignored."
+        puts ex.message
+        puts ex.backtrace
+        thereHaveBeenErrors = true
+      end #of exception handling
+#        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
+    end
+    
+    return results, processStepNames.to_a, thereHaveBeenErrors
+  end
+
+  
+
+  
+private
+  # fetches HTTP requests which use redirects
+  def fetch(uri_str, limit = 10)
+    # You should choose better exception.
+    raise ArgumentError, 'HTTP redirect too deep' if limit == 0
+
+    response = Net::HTTP.get_response(URI.parse(uri_str))
+    case response
+        when Net::HTTPSuccess then response
+        when Net::HTTPRedirection then fetch(response['location'], limit - 1)
+    else
+        response.error!
+    end
+  end
+  
+  
+  
+  
+  # removes whitespaces and HTML tags from a given string
+  # maintains single word spacing blanks
+  def clean(string)
+    #remove HTML tags, if there are any
+    string.gsub!(/<.+?>/, '') unless ((string =~ /<.+?>/) == nil)
+
+    #convert &nbsp; into blanks
+    string.gsub!(/&nbsp;/, ' ')
+
+    #remove whitespaces
+    string.gsub!(/\r/, '')
+    string.gsub!(/\n/, '')
+    string.gsub!(/\t/, '')
+
+    #remove blanks at end
+    string.strip!
+
+    #convert multiple blanks into single blanks
+    string.gsub!(/\ +/, ' ')
+
+    return string
+  end
+  
+end

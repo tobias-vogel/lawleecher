@@ -1,6 +1,9 @@
-# 
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
- 
+require 'g_u_i.rb'
+require 'core.rb'
 
-puts "Hello World"
+
+theCore = Core.new
+gui = GUI.new(theCore)
+theCore.addGuiPointer gui
+
+gui.run
