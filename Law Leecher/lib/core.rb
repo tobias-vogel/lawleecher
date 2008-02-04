@@ -4,8 +4,8 @@ require 'saver.rb'
 class Core
   
   def initialize
-    @theFetcher = Fetcher.new
-    @theSaver = Saver.new
+    @theFetcher = Fetcher.new(self)
+    @theSaver = Saver.new(self)
     
     # this list contains all keys for the process steps found
     @processStepNames = []
@@ -43,6 +43,22 @@ class Core
       @theGui.warn 'There have been errors.'
     end
     
-    @theSaver.save @laws, @processStepNames, @filename
+    info = @theSaver.save @laws, @processStepNames, @filename
+    
+    callback(info)
+    
+  end
+  
+  def callback(bunchOfInformation)
+    puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
+    @theGui.updateWidgets(bunchOfInformation)    
+  end
+  
+  def readyToStart?(overWritingPermitted)
+    if @theSaver.fileExists? @filename and !overWritingPermitted
+      return false
+    else
+      return true
+    end
   end
 end

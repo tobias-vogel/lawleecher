@@ -5,6 +5,14 @@ require 'date/format'
 
 class Fetcher
   
+  def initialize(theCore)
+    @theCore = theCore
+  end
+  
+  def informUser(bunchOfInformation)
+    @theCore.callback bunchOfInformation
+  end
+  
   def retrieveLawIDs
     #array containing all law ids
     lawIDs = Array.new
@@ -34,7 +42,7 @@ class Fetcher
       raise 'There are pagination buttons, not all laws would be retrieved.' unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
 
 
-      puts "#{maxEntries} laws found for #{type}"
+      #puts "#{maxEntries} laws found for #{type}"
 
 
       #fetch out ids for each single law as array and append it to the current set of ids
@@ -42,7 +50,9 @@ class Fetcher
       lawIDsFromCurrentType = content.scan(/\d{1,6}(?=" title="Click here to reach the detail page of this file">)/)
       lawIDsFromCurrentType.uniq! # to eliminate the twin of each law id (which is inevitably included)
       lawIDs += lawIDsFromCurrentType
-
+      
+      informUser({'status' => "#{maxEntries} laws found for #{type}"})
+      
     end # of current type
 
     #now, all law IDs are contained in the array
@@ -53,7 +63,9 @@ class Fetcher
 
     raise 'There were laws which occured on different pages.' if lawIDs.size != numberOfLaws
 
-    puts "#{numberOfLaws} laws found in total"
+    #puts "#{numberOfLaws} laws found in total"
+    
+    informUser({'status' => "#{numberOfLaws} laws found in total"})
     
     return lawIDs
   end
@@ -91,7 +103,11 @@ class Fetcher
         # save this to calculate the average duration
         metaStartTime = Time.now
 
-        puts "retrieving law ##{lawID} (#{currentLawCount}/#{lawIDs.size})"
+        #puts "retrieving law ##{lawID} (#{currentLawCount}/#{lawIDs.size})"
+        informUser({'status' => "retrieving law ##{lawID}",
+                    'progressBarText' => "#{currentLawCount}/#{lawIDs.size}",
+                    'progressBarIncrement' => [1, currentLawCount * 1.0 / lawIDs.size].min})
+        
         response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
         content = response.body
 

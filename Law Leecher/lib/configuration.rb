@@ -30,7 +30,7 @@ class Configuration
   end
   
   # default file name of the export
-  @@defaultFilename = 'export.csv'
+  @@defaultFilename = "#{Dir.pwd}/export.csv"
   def Configuration.defaultFilename
     @@defaultFilename
   end

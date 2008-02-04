@@ -1,14 +1,24 @@
 class Saver
-  def initialize
+  
+  def initialize(theCore)
+    @theCore = theCore
   end
   
+  
+  def fileExists?(filename)
+    File.exists? filename
+  end
+  
+  
+  def informUser(bunchOfInformation)
+    @theCore.callback bunchOfInformation
+  end
+
+  
   def save(laws, processStepNames, filename)
-    if File.exists? filename
-      puts "datei #{filename} existiert bereits, breche ab"
-      exit -1
-    end
+    informUser({'status' => "Speichere in #{filename}..."})
+    
     file = File.new(filename, "w")
-    puts "speichere in #{filename}"
 
     # write header in file
     # Configuration.categories + processStepNames contain all keys of the laws,
@@ -53,8 +63,9 @@ class Saver
     sum = 0
     averageDuration = 0
     laws.each {|i| sum += i['MetaDuration']}
-    puts "total duration: #{sum / 60} minutes"
+    #puts "total duration: #{sum / 60} minutes"
     averageDuration = sum / laws.size unless laws.size == 0
-    puts "average duration per law: #{averageDuration} seconds"
+    #puts "average duration per law: #{averageDuration} seconds"
+    return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich pro Gesetz #{averageDuration} Sekunden"})
   end
 end
