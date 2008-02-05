@@ -95,7 +95,7 @@ class Fetcher
     processStepNames = Set.new
     
     # for each lawID, submit HTTP GET request for fetching out the information of interest  
-    lawIDs[1..10].each do |lawID|
+    lawIDs.each do |lawID|
 #lawID = 105604
 
       begin # start try block
@@ -106,7 +106,7 @@ class Fetcher
         #puts "retrieving law ##{lawID} (#{currentLawCount}/#{lawIDs.size})"
         informUser({'status' => "retrieving law ##{lawID}",
                     'progressBarText' => "#{currentLawCount}/#{lawIDs.size}",
-                    'progressBarIncrement' => [1, currentLawCount * 1.0 / lawIDs.size].min})
+                    'progressBarIncrement' => 1.0 / lawIDs.size})
         
         response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
         content = response.body

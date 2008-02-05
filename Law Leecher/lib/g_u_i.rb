@@ -28,7 +28,7 @@ class GUI
 
     
     overWriteButton = Gtk::ToggleButton.new()
-    overWriteButtonLabel = Gtk::Label.new('Vorhandene Datei überschreiben')
+    overWriteButtonLabel = Gtk::Label.new('Vorhandene Datei ggfs. überschreiben')
     
 
     startButton = Gtk::Button.new('Start')
@@ -144,7 +144,7 @@ class GUI
   
   def updateWidgets(info)
     @progressBar.text = info['progressBarText'] if info.has_key? 'progressBarText'
-    @progressBar.set_fraction(@progressBar.fraction + info['progressBarIncrement']) if info.has_key? 'progressBarIncrement'
+    @progressBar.set_fraction([@progressBar.fraction + info['progressBarIncrement'], 1].min) if info.has_key? 'progressBarIncrement'
     @statusLabel.text = info['status'] if info.has_key? 'status'
 
     while Gtk.events_pending?
