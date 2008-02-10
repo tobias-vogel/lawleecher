@@ -39,12 +39,11 @@ class Core
     
     @laws, @processStepNames, errors = @theFetcher.retrieveLawContents(lawIDs)
     
+    info = @theSaver.save @laws, @processStepNames, @filename    
+    
     if errors
       info['status'] << ' There have been errors.' if info.has_key? 'status'
     end
-    
-    info = @theSaver.save @laws, @processStepNames, @filename    
-    
     
     callback(info)
     

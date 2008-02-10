@@ -26,7 +26,7 @@ class GUI
     fileNameEntry.set_text @theCore.filename
     fileChooserButton = Gtk::Button.new('Durchsuchen...')
 
-    
+
     overWriteButton = Gtk::ToggleButton.new()
     overWriteButtonLabel = Gtk::Label.new('Vorhandene Datei ggfs. überschreiben')
     
@@ -54,7 +54,10 @@ class GUI
 
     #signals #######################################################################
 
-    window.signal_connect('delete_event') {Gtk::main_quit}
+    window.signal_connect('delete_event') {
+      Gtk::main_quit
+      exit(-1)
+    }
 
 
     fileChooserButton.signal_connect('clicked') {

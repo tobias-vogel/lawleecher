@@ -24,7 +24,7 @@ class Configuration
   end
   
   # categories to crawl
-  @@categories = ['Type', 'Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible']
+  @@categories = ['Type', 'ID', 'Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible', 'DurationInformation']
   def Configuration.categories
     @@categories
   end

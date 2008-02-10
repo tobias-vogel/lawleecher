@@ -29,7 +29,7 @@ class Saver
     laws.each do |law|
 
       # row contains all information for the current law (as array to be transformed by Array#join into a string, later)
-      row =  Array.new
+      row = Array.new
       
       # first, save category data, since it is present at all laws
       Configuration.categories.each do |category|
@@ -48,7 +48,19 @@ class Saver
 
       # finally, join all elements together to form a string representation of
       # all the current law's contents which can be saved in the file
-      file.puts row.join(Configuration.separator)
+      line = row.join(Configuration.separator)
+
+      # hack to replace each occurence of Ã© by é
+      for i in 0..line.length - 1
+        if line[i] == 195 and line[i + 1] == 169
+          line[i] = 233 # = é
+          line[i + 1] = ''
+          i += 1
+        end
+      end
+
+      file.puts line
+      file.puts "ende\r\n"
     end
 
     file.close
@@ -66,6 +78,6 @@ class Saver
     #puts "total duration: #{sum / 60} minutes"
     averageDuration = sum / laws.size unless laws.size == 0
     #puts "average duration per law: #{averageDuration} seconds"
-    return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich pro Gesetz #{averageDuration} Sekunden"})
+    return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich pro Gesetz #{"%.2f"%averageDuration} Sekunden"})
   end
 end

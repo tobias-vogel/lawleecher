@@ -20,7 +20,67 @@ class Fetcher
     Configuration.types.each do |type|
       puts "looking for #{type} laws..."
       # start query for current type
-      response = Net::HTTP.start('ec.europa.eu').post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=#{type}&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
+      #response = Net::HTTP.start('ec.europa.eu').post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=#{type}&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
+      response = Net::HTTP.post_form URI.parse('http://ec.europa.eu/prelex/liste_resultats.cfm?CL=en'),
+           {'doc_typ' => '',
+            'docdos' => 'dos',
+            'requete_id' => '0',
+            'clef1' => type,
+            'doc_ann' => '',
+            'doc_num' => '',
+            'doc_ext' => '',
+            'clef4' => '',
+            'clef2' => Configuration.year,
+            'clef3' => '',
+            'LNG_TITRE' => 'EN',
+            'titre' => '',
+            'titre_boolean' => '',
+            'EVT1' => '',
+            'GROUPE1' => '',
+            'EVT1_DD_1' => '',
+            'EVT1_MM_1' => '',
+            'EVT1_YY_1' => '',
+            'EVT1_DD_2' => '',
+            'EVT1_MM_2' => '',
+            'EVT1_YY_2' => '',
+            'event_boolean' => '+and+',
+            'EVT2' => '',
+            'GROUPE2' => '',
+            'EVT2_DD_1' => '',
+            'EVT2_MM_1' => '',
+            'EVT2_YY_1' => '',
+            'EVT2_DD_2' => '',
+            'EVT2_MM_2' => '',
+            'EVT2_YY_2' => '',
+            'EVT3' => '',
+            'GROUPE3' => '',
+            'EVT3_DD_1' => '',
+            'EVT3_MM_1' => '',
+            'EVT3_YY_1' => '',
+            'EVT3_DD_2' => '',
+            'EVT3_MM_2' => '',
+            'EVT3_YY_2' => '',
+            'TYPE_DOSSIER' => '',
+            'NUM_CELEX_TYPE' => '',
+            'NUM_CELEX_YEAR' => '',
+            'NUM_CELEX_NUM' => '',
+            'BASE_JUR' => '',
+            'DOMAINE1' => '',
+            'domain_boolean' => '+and+',
+            'DOMAINE2' => '',
+            'COLLECT1' => '',
+            'COLLECT1_ROLE' => '',
+            'collect_boolean' => '+and+',
+            'COLLECT2' => '',
+            'COLLECT2_ROLE' => '',
+            'PERSON1' => '',
+            'PERSON1_ROLE' => '',
+            'person_boolean' => '+and+',
+            'PERSON2' => '',
+            'PERSON2_ROLE' => '',
+            'nbr_element' => Configuration.numberOfMaxHitsPerPage.to_s,
+            'first_element' => '1',
+            'type_affichage' => '1'}
 
       content = response.body
 
@@ -49,6 +109,7 @@ class Fetcher
       #the uniq! removes double ids (<a href="id">id</a>)
       lawIDsFromCurrentType = content.scan(/\d{1,6}(?=" title="Click here to reach the detail page of this file">)/)
       lawIDsFromCurrentType.uniq! # to eliminate the twin of each law id (which is inevitably included)
+      lawIDsFromCurrentType.delete 219546 # this law is is an empty entry
       lawIDs += lawIDsFromCurrentType
       
       informUser({'status' => "#{maxEntries} laws found for #{type}"})
@@ -94,9 +155,18 @@ class Fetcher
     # set of process step names (will be collected to be used for the csv file columns)
     processStepNames = Set.new
     
+    # number of retries, if remote host closed connection error occured
+    # then, the current lawID is appended to lawIDs and to avoid, retriesLeft is
+    # decremented before the end of lawIDs.each
+    # probably, lawIDs.each will only be iterated 2 times at most
+    #retriesLeft = 5
+    
     # for each lawID, submit HTTP GET request for fetching out the information of interest  
     lawIDs.each do |lawID|
 #lawID = 105604
+      puts ""
+    
+      puts "vorne"
 
       begin # start try block
 
@@ -196,8 +266,8 @@ class Fetcher
 
         # find out the law type (has been forgotten since only law IDs were saved)
         begin
-          type = content[/<font face="Arial">\s*<font size=-1>\d{4}\/\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/]
-          type.gsub!(/<font face="Arial">\s*<font size=-1>\d{4}\/\d{4}\//, '')
+          type = content[/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/]
+          type.gsub!(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, '')
         rescue
           # this law does not have "type" data
           type = '[fehlt]'
@@ -226,9 +296,19 @@ class Fetcher
 
           # create the variable here to have a scope over the next iterator
           @timeOfFirstStep = nil
+          
+          
+          # defines the offset of the year (since ruby only supports timestamps beginning with          
+          # 01.01.1970) which is only valid for (and affects only) the current law
+          yearOffset = 0
+
+          # container for the largest single duration (= the duration of the whole law)
+          # is overwritten in each process step and thus, contains the maximum duration
+          # since the dates are ordered chronological on the page
+          lastDuration = 0
 
           processSteps.each do |step|
-
+            
             stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
 
             #puts stepName + " => " + timeStamp
@@ -238,7 +318,14 @@ class Fetcher
 
             #second (parse date)
             parsedDate = Date._parse timeStamp
-            time = Time.utc parsedDate[:year], parsedDate[:mon], parsedDate[:mday]
+            
+            # if year is critical or (is it not, but) offset has been used in an
+            # earlier iteration within this law
+            if parsedDate[:year] < 1970 or yearOffset != 0
+              yearOffset = 10 # shift law 10 years into the future
+            end
+            
+            time = Time.utc parsedDate[:year] + yearOffset, parsedDate[:mon], parsedDate[:mday]
 
             timeStampOrDuration = timeStamp
 
@@ -248,12 +335,15 @@ class Fetcher
               #calculate the difference between first and current timeStamp
               duration = ((time - @timeOfFirstStep) / 60 / 60 / 24).floor
               timeStampOrDuration = duration
+              lastDuration = duration
             end
 
             #third (add duration)
             arrayEntry[stepName] = timeStampOrDuration
           end
-          #arrayEntry['DurationInformation'] = stepTimeHash
+          
+          #puts lastDuration
+          arrayEntry['DurationInformation'] = lastDuration
 
 #stepTimeHash.each {|i| puts i}
         rescue StandardError => ex
@@ -266,17 +356,28 @@ class Fetcher
 
         metaEndTime = Time.now
         arrayEntry['MetaDuration'] = metaEndTime - metaStartTime
+        
+        arrayEntry['ID'] = lawID
 
         #add all fetched information (which is stored in arrayEntry) in the results array, finally
         results << arrayEntry
 
         currentLawCount += 1
+        
 
       rescue StandardError => ex
         puts "There has been an error with law ##{lawID}. This law will be ignored."
         puts ex.message
         puts ex.backtrace
         thereHaveBeenErrors = true
+        if ex.message == 'An existing connection was forcibly closed by the remote host.' or
+           ex.message == 'end of file reached' 
+          puts "starte nochmal von vorne"
+          retry
+        end
+          
+
+
       end #of exception handling
 #        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
     end
@@ -293,12 +394,17 @@ private
     # You should choose better exception.
     raise ArgumentError, 'HTTP redirect too deep' if limit == 0
 
-    response = Net::HTTP.get_response(URI.parse(uri_str))
-    case response
-        when Net::HTTPSuccess then response
-        when Net::HTTPRedirection then fetch(response['location'], limit - 1)
-    else
-        response.error!
+    begin
+      response = Net::HTTP.get_response(URI.parse(uri_str))
+      case response
+          when Net::HTTPSuccess then response
+          when Net::HTTPRedirection then fetch(response['location'], limit - 1)
+      else
+          response.error!
+      end
+    rescue StandardError => ex
+      puts ex.message
+      puts ex.backtrace
     end
   end
   
