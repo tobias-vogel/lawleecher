@@ -13,4 +13,8 @@ theCore = Core.new
 gui = GUI.new(theCore)
 theCore.addGuiPointer gui
 
-gui.run
+begin
+  gui.run
+rescue Exception => ex
+  puts $!
+end

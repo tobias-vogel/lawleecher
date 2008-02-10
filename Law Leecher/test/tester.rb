@@ -17,10 +17,5 @@ core = Core.new
 core.addGuiPointer(GUI.new(core))
 fetcher = Fetcher.new(core)
 
-results, processStepNames, thereHaveBeenErrors = fetcher.retrieveLawContents([192222])
-Saver.new(core).save(results, ["aaa", "bbb"], "c:\\export.csv")
-
-
-
-#puts results.inspect
-exit
+results, processStepNames, thereHaveBeenErrors = fetcher.retrieveLawContents([193636])
+Saver.new(core).save(results, processStepNames, "c:\\export.csv")

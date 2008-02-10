@@ -54,13 +54,12 @@ class Saver
       for i in 0..line.length - 1
         if line[i] == 195 and line[i + 1] == 169
           line[i] = 233 # = é
-          line[i + 1] = ''
-          i += 1
+          line[i + 1] = '' # remove the following byte...
+          i += 1 # ... and therefore, skip the following iteration step 
         end
       end
 
       file.puts line
-      file.puts "ende\r\n"
     end
 
     file.close

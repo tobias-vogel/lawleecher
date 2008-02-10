@@ -20,67 +20,69 @@ class Fetcher
     Configuration.types.each do |type|
       puts "looking for #{type} laws..."
       # start query for current type
-      #response = Net::HTTP.start('ec.europa.eu').post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=#{type}&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
-      response = Net::HTTP.post_form URI.parse('http://ec.europa.eu/prelex/liste_resultats.cfm?CL=en'),
-           {'doc_typ' => '',
-            'docdos' => 'dos',
-            'requete_id' => '0',
-            'clef1' => type,
-            'doc_ann' => '',
-            'doc_num' => '',
-            'doc_ext' => '',
-            'clef4' => '',
-            'clef2' => Configuration.year,
-            'clef3' => '',
-            'LNG_TITRE' => 'EN',
-            'titre' => '',
-            'titre_boolean' => '',
-            'EVT1' => '',
-            'GROUPE1' => '',
-            'EVT1_DD_1' => '',
-            'EVT1_MM_1' => '',
-            'EVT1_YY_1' => '',
-            'EVT1_DD_2' => '',
-            'EVT1_MM_2' => '',
-            'EVT1_YY_2' => '',
-            'event_boolean' => '+and+',
-            'EVT2' => '',
-            'GROUPE2' => '',
-            'EVT2_DD_1' => '',
-            'EVT2_MM_1' => '',
-            'EVT2_YY_1' => '',
-            'EVT2_DD_2' => '',
-            'EVT2_MM_2' => '',
-            'EVT2_YY_2' => '',
-            'EVT3' => '',
-            'GROUPE3' => '',
-            'EVT3_DD_1' => '',
-            'EVT3_MM_1' => '',
-            'EVT3_YY_1' => '',
-            'EVT3_DD_2' => '',
-            'EVT3_MM_2' => '',
-            'EVT3_YY_2' => '',
-            'TYPE_DOSSIER' => '',
-            'NUM_CELEX_TYPE' => '',
-            'NUM_CELEX_YEAR' => '',
-            'NUM_CELEX_NUM' => '',
-            'BASE_JUR' => '',
-            'DOMAINE1' => '',
-            'domain_boolean' => '+and+',
-            'DOMAINE2' => '',
-            'COLLECT1' => '',
-            'COLLECT1_ROLE' => '',
-            'collect_boolean' => '+and+',
-            'COLLECT2' => '',
-            'COLLECT2_ROLE' => '',
-            'PERSON1' => '',
-            'PERSON1_ROLE' => '',
-            'person_boolean' => '+and+',
-            'PERSON2' => '',
-            'PERSON2_ROLE' => '',
-            'nbr_element' => Configuration.numberOfMaxHitsPerPage.to_s,
-            'first_element' => '1',
-            'type_affichage' => '1'}
+      response = Net::HTTP.start('ec.europa.eu').post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=#{type}&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
+#      response = Net::HTTP.post_form URI.parse('http://ec.europa.eu/prelex/liste_resultats.cfm?CL=en'),
+#        {'dadada' => '+'}
+#      
+#        {'doc_typ' => '',
+#            'docdos' => 'dos',
+#            'requete_id' => '0',
+#            'clef1' => type,
+#            'doc_ann' => '',
+#            'doc_num' => '',
+#            'doc_ext' => '',
+#            'clef4' => '',
+#            'clef2' => Configuration.year,
+#            'clef3' => '',
+#            'LNG_TITRE' => 'EN',
+#            'titre' => '',
+#            'titre_boolean' => '',
+#            'EVT1' => '',
+#            'GROUPE1' => '',
+#            'EVT1_DD_1' => '',
+#            'EVT1_MM_1' => '',
+#            'EVT1_YY_1' => '',
+#            'EVT1_DD_2' => '',
+#            'EVT1_MM_2' => '',
+#            'EVT1_YY_2' => '',
+#            'event_boolean' => '+and+',
+#            'EVT2' => '',
+#            'GROUPE2' => '',
+#            'EVT2_DD_1' => '',
+#            'EVT2_MM_1' => '',
+#            'EVT2_YY_1' => '',
+#            'EVT2_DD_2' => '',
+#            'EVT2_MM_2' => '',
+#            'EVT2_YY_2' => '',
+#            'EVT3' => '',
+#            'GROUPE3' => '',
+#            'EVT3_DD_1' => '',
+#            'EVT3_MM_1' => '',
+#            'EVT3_YY_1' => '',
+#            'EVT3_DD_2' => '',
+#            'EVT3_MM_2' => '',
+#            'EVT3_YY_2' => '',
+#            'TYPE_DOSSIER' => '',
+#            'NUM_CELEX_TYPE' => '',
+#            'NUM_CELEX_YEAR' => '',
+#            'NUM_CELEX_NUM' => '',
+#            'BASE_JUR' => '',
+#            'DOMAINE1' => '',
+#            'domain_boolean' => '+and+',
+#            'DOMAINE2' => '',
+#            'COLLECT1' => '',
+#            'COLLECT1_ROLE' => '',
+#            'collect_boolean' => '+and+',
+#            'COLLECT2' => '',
+#            'COLLECT2_ROLE' => '',
+#            'PERSON1' => '',
+#            'PERSON1_ROLE' => '',
+#            'person_boolean' => '+and+',
+#            'PERSON2' => '',
+#            'PERSON2_ROLE' => '',
+#            'nbr_element' => Configuration.numberOfMaxHitsPerPage.to_s,
+#            'first_element' => '1',
+#            'type_affichage' => '1'}
 
       content = response.body
 
@@ -286,7 +288,8 @@ class Fetcher
           processSteps.gsub!(/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/, '')
           processSteps = processSteps.split(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/)
           processSteps.last.gsub!(/<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*/, '')
-
+          # necessary if the is only one process step since then, the split above doesn't remove whitespaces
+          processSteps.last.gsub!(/\s*/, '') if processSteps.size == 1
 
           # iterate over processSteps, do 3 things:
           # first, add the process step name to the global list of process steps
@@ -310,7 +313,7 @@ class Fetcher
           processSteps.each do |step|
             
             stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
-
+            
             #puts stepName + " => " + timeStamp
 
             # first (add to global list)
@@ -365,19 +368,19 @@ class Fetcher
         currentLawCount += 1
         
 
-      rescue StandardError => ex
+      rescue Exception => ex
         puts "There has been an error with law ##{lawID}. This law will be ignored."
         puts ex.message
+        puts ex.class
         puts ex.backtrace
-        thereHaveBeenErrors = true
-        if ex.message == 'An existing connection was forcibly closed by the remote host.' or
-           ex.message == 'end of file reached' 
-          puts "starte nochmal von vorne"
+#        if ex.message == 'An existing connection was forcibly closed by the remote host.' or
+#           ex.message == 'end of file reached' 
+        if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError  
+          puts "starte dieses gesetz nochmal von vorne"
           retry
+        else
+          thereHaveBeenErrors = true
         end
-          
-
-
       end #of exception handling
 #        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
     end
@@ -394,7 +397,7 @@ private
     # You should choose better exception.
     raise ArgumentError, 'HTTP redirect too deep' if limit == 0
 
-    begin
+#    begin
       response = Net::HTTP.get_response(URI.parse(uri_str))
       case response
           when Net::HTTPSuccess then response
@@ -402,10 +405,12 @@ private
       else
           response.error!
       end
-    rescue StandardError => ex
-      puts ex.message
-      puts ex.backtrace
-    end
+#    rescue Exception => ex
+#      puts ex
+#      puts ex.class
+#      puts ex.message
+#      puts ex.backtrace
+#    end
   end
   
   

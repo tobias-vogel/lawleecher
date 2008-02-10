@@ -18,12 +18,13 @@ class GUI
 
 
 
-    welcomeLabel = Gtk::Label.new("Bedienung:\n1.) Dateinamen festlegen\n2.) Start drücken\n\n")
-    welcomeLabel.justify= Gtk::JUSTIFY_LEFT
+    #welcomeLabel = Gtk::Label.new("Bedienung:\n1.) Dateinamen festlegen\n2.) Start drücken\n\n")
+    #welcomeLabel.justify= Gtk::JUSTIFY_LEFT
 
     fileChooserTextLabel = Gtk::Label.new('Dateiname')
     fileNameEntry = Gtk::Entry.new()
     fileNameEntry.set_text @theCore.filename
+    fileNameEntry.set_size_request 400, 20
     fileChooserButton = Gtk::Button.new('Durchsuchen...')
 
 
@@ -56,7 +57,7 @@ class GUI
 
     window.signal_connect('delete_event') {
       Gtk::main_quit
-      exit(-1)
+      exit!
     }
 
 
@@ -82,6 +83,9 @@ class GUI
     startButton.signal_connect('clicked') {
       if @theCore.readyToStart?(overWriteButton.active?)
         startButton.set_sensitive false
+        fileChooserButton.set_sensitive false
+        fileNameEntry.set_sensitive false
+        overWriteButton.set_sensitive false
         while Gtk.events_pending?
           Gtk.main_iteration
         end
@@ -96,6 +100,9 @@ class GUI
   #      #5.times {@progressBar.set_fraction [1, progressBar.fraction + 0.1].min}
   #      #rechnelange *@progressBar
         startButton.set_sensitive true
+        fileChooserButton.set_sensitive true
+        fileNameEntry.set_sensitive true
+        overWriteButton.set_sensitive true
       else
         dialog = Gtk::MessageDialog.new(window,
                                         Gtk::Dialog::DESTROY_WITH_PARENT,
@@ -117,21 +124,21 @@ class GUI
 
     window.add(table)
 
-    table.attach(welcomeLabel, 0, 2, 0, 1, 0, 0, 0, 0)
+    #table.attach(welcomeLabel, 0, 2, 0, 1, 0, 0, 0, 0)
 
-    table.attach(fileChooserTextLabel, 0, 1, 1, 2, 0, 0, 0, 0)
-    table.attach(fileNameEntry, 1, 5, 1, 2, 0, 0, 0, 0)
-    table.attach(fileChooserButton, 5, 6, 1, 2, 0, 0, 0, 0)
+    table.attach(fileChooserTextLabel, 0, 1, 0, 1, 0, 0, 0, 0)
+    table.attach(fileNameEntry, 1, 5, 0, 1, 0, 0, 0, 0)
+    table.attach(fileChooserButton, 5, 6, 0, 1, 0, 0, 0, 0)
 
-    table.attach(overWriteButton, 2, 3, 2, 3, 0, 0, 0, 0)
-    table.attach(overWriteButtonLabel, 3, 6, 2, 3, 0, 0, 0, 0)
+    table.attach(overWriteButton, 1, 2, 1, 2, 0, 0, 0, 0)
+    table.attach(overWriteButtonLabel, 1, 4, 1, 2, 0, 0, 0, 0)
     
-    table.attach(startButton, 0, 1, 3, 4, Gtk::FILL, 0, 0, 0)
+    table.attach(startButton, 0, 1, 2, 3, Gtk::FILL, 0, 0, 0)
     #table.attach(progressTextLabel, 0, 2, 3, 4, 0, 0, 0, 0)
-    table.attach(@progressBar, 1, 6, 3, 4, Gtk::FILL, 0, 0, 0)
+    table.attach(@progressBar, 1, 6, 2, 3, Gtk::FILL, 0, 0, 0)
 
     #table.attach(statusTextLabel, 0, 2, 4, 5, 0, 0, 0, 0)
-    table.attach(@statusLabel, 0, 6, 4, 5, 0, 0, 0, 0)
+    table.attach(@statusLabel, 0, 6, 3, 4, 0, 0, 0, 0)
 
     window.show_all
   end
