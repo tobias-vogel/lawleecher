@@ -82,6 +82,8 @@ class GUI
     
     startButton.signal_connect('clicked') {
       if @theCore.readyToStart?(overWriteButton.active?)
+        updateWidgets({'progressBarText' => '', 'status' => ''})
+        @progressBar.set_fraction 0
         startButton.set_sensitive false
         fileChooserButton.set_sensitive false
         fileNameEntry.set_sensitive false

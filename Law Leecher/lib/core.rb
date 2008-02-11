@@ -30,9 +30,9 @@ class Core
     @theGui = theGui
   end
 
-  def informUser(message)
-    @theGui.printAndRefresh message
-  end
+#  def informUser(message)
+#    @theGui.printAndRefresh message
+#  end
   
   def startProcess
     lawIDs = @theFetcher.retrieveLawIDs()  #TODO hier callback dazufügen {@theGui.informUser}

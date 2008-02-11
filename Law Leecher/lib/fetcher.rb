@@ -166,9 +166,9 @@ class Fetcher
     # for each lawID, submit HTTP GET request for fetching out the information of interest  
     lawIDs.each do |lawID|
 #lawID = 105604
-      puts ""
+      #puts ""
     
-      puts "vorne"
+      #puts "vorne"
 
       begin # start try block
 
