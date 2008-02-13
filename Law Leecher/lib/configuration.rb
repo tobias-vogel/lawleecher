@@ -4,9 +4,9 @@ class Configuration
   def Configuration.types
     @@types[0]
   end
-  
+
   # year filter to apply (empty string for all years)
-  @@year = ''
+  @@year = '2000'
   def Configuration.year
     @@year
   end

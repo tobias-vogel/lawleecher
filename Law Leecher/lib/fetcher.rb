@@ -369,16 +369,17 @@ class Fetcher
         
 
       rescue Exception => ex
-        puts "There has been an error with law ##{lawID}. This law will be ignored."
-        puts ex.message
-        puts ex.class
-        puts ex.backtrace
+        
 #        if ex.message == 'An existing connection was forcibly closed by the remote host.' or
 #           ex.message == 'end of file reached' 
         if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError  
-          puts "starte dieses gesetz nochmal von vorne"
+          puts "Zeitüberschreitung bei Gesetz ##{lawID}. Starte dieses Gesetz nochmal von vorne."
           retry
         else
+          puts "Es gab einen Fehler mit Gesetz ##{lawID}. Dieses Gesetz wird ignoriert."
+          puts ex.message
+          puts ex.class
+          puts ex.backtrace
           thereHaveBeenErrors = true
         end
       end #of exception handling
@@ -437,6 +438,5 @@ private
     string.gsub!(/\ +/, ' ')
 
     return string
-  end
-  
+  end  
 end
