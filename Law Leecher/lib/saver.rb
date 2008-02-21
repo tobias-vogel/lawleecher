@@ -1,3 +1,5 @@
+require 'iconv'
+
 class Saver
   
   def initialize(theCore)
@@ -14,6 +16,9 @@ class Saver
     @theCore.callback bunchOfInformation
   end
 
+  def convertUTF8ToANSI(string)
+    return Iconv.new("iso-8859-1", "utf-8").iconv(string)
+  end
   
   def save(laws, processStepNames, filename)
     informUser({'status' => "Speichere in #{filename}..."})
@@ -21,10 +26,16 @@ class Saver
     begin
       file = File.new(filename, "w")
 
+      #include BOM for UTF-8
+#      file.print 239.chr
+#      file.print 187.chr
+#      file.print 191.chr
+      
+
       # write header in file
       # Configuration.categories + processStepNames contain all keys of the laws,
       # except for metaDuration
-      file.puts((Configuration.categories + processStepNames).join(Configuration.separator))
+      file.puts convertUTF8ToANSI(((Configuration.categories + processStepNames).join(Configuration.separator)))
 
       #write data in file
       laws.each do |law|
@@ -57,33 +68,33 @@ class Saver
         # hack to replace each occurence of Ã© by é and Ã¨ by è
         # Ã  à
         #Ã‰ É
-        for i in 0..line.length - 1
-          if line[i] == 195 and line[i + 1] == 169 # Ã©
-            line[i] = 233 # = é
-            line[i + 1] = '' # remove the following byte...
-            i += 1 # ... and therefore, skip the following iteration step
-          end
+#         for i in 0..line.length - 1
+#           if line[i] == 195 and line[i + 1] == 169 # Ã©
+#             line[i] = 233 # = é
+#             line[i + 1] = '' # remove the following byte...
+#             i += 1 # ... and therefore, skip the following iteration step
+#           end
+# 
+#           if line[i] == 195 and line[i + 1] == 168 # Ã¨
+#             line[i] = 232 # = è
+#             line[i + 1] = '' # remove the following byte...
+#             i += 1 # ... and therefore, skip the following iteration step
+#           end
+# 
+#           if line[i] == 195 and line[i + 1] == 137 # Ã‰
+#             line[i] = 201 # = É
+#             line[i + 1] = '' # remove the following byte...
+#             i += 1 # ... and therefore, skip the following iteration step
+#           end
+# 
+#           if line[i] == 195 and line[i + 1] == 160 # Ã  (there are two characters(!))
+#             line[i] = 224 # = à
+#             line[i + 1] = '' # remove the following byte...
+#             i += 1 # ... and therefore, skip the following iteration step
+#           end
+#        end
 
-          if line[i] == 195 and line[i + 1] == 168 # Ã¨
-            line[i] = 232 # = è
-            line[i + 1] = '' # remove the following byte...
-            i += 1 # ... and therefore, skip the following iteration step
-          end
-
-          if line[i] == 195 and line[i + 1] == 137 # Ã‰
-            line[i] = 201 # = É
-            line[i + 1] = '' # remove the following byte...
-            i += 1 # ... and therefore, skip the following iteration step
-          end
-
-          if line[i] == 195 and line[i + 1] == 160 # Ã  (there are two characters(!))
-            line[i] = 224 # = à
-            line[i + 1] = '' # remove the following byte...
-            i += 1 # ... and therefore, skip the following iteration step
-          end
-        end
-
-        file.puts line
+        file.puts convertUTF8ToANSI(line)
       end
 
       file.close
