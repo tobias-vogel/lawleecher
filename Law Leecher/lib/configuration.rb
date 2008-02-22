@@ -2,11 +2,11 @@ class Configuration
   # law types to crawl
   @@types = %w{AVC SYN COD CNS}
   def Configuration.types
-    @@types[0]
+    @@types#[0]
   end
 
   # year filter to apply (empty string for all years)
-  @@year = '2000'
+  @@year = ''
   def Configuration.year
     @@year
   end

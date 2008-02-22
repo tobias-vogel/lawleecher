@@ -2,6 +2,7 @@ require 'net/http'
 require 'set'
 require 'configuration.rb'
 require 'date/format'
+require 'win32/sound'
 
 class Fetcher
   
@@ -21,68 +22,6 @@ class Fetcher
       puts "looking for #{type} laws..."
       # start query for current type
       response = Net::HTTP.start('ec.europa.eu').post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=#{type}&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
-#      response = Net::HTTP.post_form URI.parse('http://ec.europa.eu/prelex/liste_resultats.cfm?CL=en'),
-#        {'dadada' => '+'}
-#      
-#        {'doc_typ' => '',
-#            'docdos' => 'dos',
-#            'requete_id' => '0',
-#            'clef1' => type,
-#            'doc_ann' => '',
-#            'doc_num' => '',
-#            'doc_ext' => '',
-#            'clef4' => '',
-#            'clef2' => Configuration.year,
-#            'clef3' => '',
-#            'LNG_TITRE' => 'EN',
-#            'titre' => '',
-#            'titre_boolean' => '',
-#            'EVT1' => '',
-#            'GROUPE1' => '',
-#            'EVT1_DD_1' => '',
-#            'EVT1_MM_1' => '',
-#            'EVT1_YY_1' => '',
-#            'EVT1_DD_2' => '',
-#            'EVT1_MM_2' => '',
-#            'EVT1_YY_2' => '',
-#            'event_boolean' => '+and+',
-#            'EVT2' => '',
-#            'GROUPE2' => '',
-#            'EVT2_DD_1' => '',
-#            'EVT2_MM_1' => '',
-#            'EVT2_YY_1' => '',
-#            'EVT2_DD_2' => '',
-#            'EVT2_MM_2' => '',
-#            'EVT2_YY_2' => '',
-#            'EVT3' => '',
-#            'GROUPE3' => '',
-#            'EVT3_DD_1' => '',
-#            'EVT3_MM_1' => '',
-#            'EVT3_YY_1' => '',
-#            'EVT3_DD_2' => '',
-#            'EVT3_MM_2' => '',
-#            'EVT3_YY_2' => '',
-#            'TYPE_DOSSIER' => '',
-#            'NUM_CELEX_TYPE' => '',
-#            'NUM_CELEX_YEAR' => '',
-#            'NUM_CELEX_NUM' => '',
-#            'BASE_JUR' => '',
-#            'DOMAINE1' => '',
-#            'domain_boolean' => '+and+',
-#            'DOMAINE2' => '',
-#            'COLLECT1' => '',
-#            'COLLECT1_ROLE' => '',
-#            'collect_boolean' => '+and+',
-#            'COLLECT2' => '',
-#            'COLLECT2_ROLE' => '',
-#            'PERSON1' => '',
-#            'PERSON1_ROLE' => '',
-#            'person_boolean' => '+and+',
-#            'PERSON2' => '',
-#            'PERSON2_ROLE' => '',
-#            'nbr_element' => Configuration.numberOfMaxHitsPerPage.to_s,
-#            'first_element' => '1',
-#            'type_affichage' => '1'}
 
       content = response.body
 
@@ -194,6 +133,7 @@ class Fetcher
           fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
           fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
           fieldsOfActivity = clean(fieldsOfActivity)
+          raise if fieldsOfActivity.empty?
         rescue
           #this law does not have "fields of activity" data
           fieldsOfActivity = '[fehlt]'
@@ -208,6 +148,7 @@ class Fetcher
           legalBasis = content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
           legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
           legalBasis = clean(legalBasis)
+          raise if legalBasis.empty?
         rescue
           # this law does not have "legal basis" data
           legalBasis = '[fehlt]'
@@ -225,6 +166,7 @@ class Fetcher
           procedures = clean(procedures)
           # if "procedures" contains a value for commission and council, remove the commission value
           procedures.gsub!(/.*Commission ?: ?.*?(?=Council ?: ?)/, '') if procedures[/.*Commission.*Council.*/] != nil
+          raise if procedures.empty?
         rescue
           # this law does not have "procedures" data
           procedures = '[fehlt]'
@@ -242,6 +184,7 @@ class Fetcher
           typeOfFile = clean(typeOfFile)
           #if "type of file" contains a value for commission and council, remove the commission value
           typeOfFile.gsub!(/.*Commission ?: ?.*?(?=Council ?: ?)/, '') if typeOfFile[/.*Commission.*Council.*/] != nil
+          raise if typeOfFile.empty?
         rescue
           # this law does not have "type of file" data
           typeOfFile = '[fehlt]'
@@ -257,6 +200,7 @@ class Fetcher
           primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '')
           # convert all \t resp. \r\n into blanks
           primarilyResponsible = clean(primarilyResponsible)
+          raise if primarilyResponsible.empty?
         rescue
           # this law does not have "primarily responsible" data
           primarilyResponsible = '[fehlt]'
@@ -270,6 +214,7 @@ class Fetcher
         begin
           type = content[/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/]
           type.gsub!(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, '')
+          raise if type.empty?
         rescue
           # this law does not have "type" data
           type = '[fehlt]'
@@ -313,6 +258,11 @@ class Fetcher
           processSteps.each do |step|
             
             stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
+            
+            if stepName == 'AdoptionbyCommission'
+              Win32::Sound.beep(100, 2000)
+              puts 'AdoptionbyCommission gefunden'
+            end
             
             #puts stepName + " => " + timeStamp
 
@@ -373,7 +323,7 @@ class Fetcher
 #        if ex.message == 'An existing connection was forcibly closed by the remote host.' or
 #           ex.message == 'end of file reached' 
         if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError  
-          puts "Zeitüberschreitung bei Gesetz ##{lawID}. Starte dieses Gesetz nochmal von vorne."
+          puts "Zeitï¿½berschreitung bei Gesetz ##{lawID}. Starte dieses Gesetz nochmal von vorne."
           retry
         else
           puts "Es gab einen Fehler mit Gesetz ##{lawID}. Dieses Gesetz wird ignoriert."
