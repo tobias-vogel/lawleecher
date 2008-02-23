@@ -268,13 +268,23 @@ class Fetcher
             #puts stepName + " => " + timeStamp
 
             # first (add to global list)
-            if stepName == "Commission position on EP amendments on 1st reading"
-              puts "komisches verhalten erreicht"
-              puts "processstepnamessize = " + processStepNames.size.to_s
-            end
+#            if stepName == "Commission position on EP amendments on 1st reading"
+#              puts "komisches verhalten erreicht"
+#              puts "processstepnamessize = " + processStepNames.size.to_s
+#            end
             processStepNames << stepName
-            puts "processstepnamessize = " + processStepNames.size.to_s
-            puts processStepNames.include?("Commission position on EP amendments on 1st reading")
+#            puts "processstepnamessize = " + processStepNames.size.to_s
+#            puts processStepNames.include?("Commission position on EP amendments on 1st reading")
+#            
+            
+            
+            # save the signature timestamp additionally
+            if stepName == 'Signature by EP and Council'
+              processStepNames << 'Date of Signature by EP and Council'
+              arrayEntry['Date of Signature by EP and Council'] = timeStamp
+            end
+            
+            
             
             #second (parse date)
             parsedDate = Date._parse timeStamp
