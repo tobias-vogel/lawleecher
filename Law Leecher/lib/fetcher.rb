@@ -2,7 +2,7 @@ require 'net/http'
 require 'set'
 require 'configuration.rb'
 require 'date/format'
-require 'win32/sound'
+#require 'win32/sound'
 
 class Fetcher
   
@@ -233,8 +233,9 @@ class Fetcher
           processSteps.gsub!(/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/, '')
           processSteps = processSteps.split(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/)
           processSteps.last.gsub!(/<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*/, '')
-          # necessary if the is only one process step since then, the split above doesn't remove whitespaces
-          processSteps.last.gsub!(/\s*/, '') if processSteps.size == 1
+          # necessary if there is only one process step, because then, the split above doesn't remove whitespaces
+          #processSteps.last.gsub!(/\s*/, '') if processSteps.size == 1
+          processSteps.last.strip! if processSteps.size == 1
 
           # iterate over processSteps, do 3 things:
           # first, add the process step name to the global list of process steps
@@ -260,7 +261,7 @@ class Fetcher
             stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
             
             if stepName == 'AdoptionbyCommission'
-              Win32::Sound.beep(100, 2000)
+              #Win32::Sound.beep(100, 2000)
               puts 'AdoptionbyCommission gefunden'
             end
             
