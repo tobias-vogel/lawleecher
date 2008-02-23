@@ -7,6 +7,7 @@ class Configuration
 
   # year filter to apply (empty string for all years)
   @@year = ''
+  #@@year = '2000'
   def Configuration.year
     @@year
   end

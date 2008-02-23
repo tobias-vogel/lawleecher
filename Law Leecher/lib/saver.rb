@@ -26,16 +26,10 @@ class Saver
     begin
       file = File.new(filename, "w")
 
-      #include BOM for UTF-8
-#      file.print 239.chr
-#      file.print 187.chr
-#      file.print 191.chr
-      
-
       # write header in file
       # Configuration.categories + processStepNames contain all keys of the laws,
       # except for metaDuration
-      file.puts convertUTF8ToANSI(((Configuration.categories + processStepNames).join(Configuration.separator)))
+      file.puts convertUTF8ToANSI(((Configuration.categories + processStepNames.sort).join(Configuration.separator)))
 
       #write data in file
       laws.each do |law|
@@ -45,14 +39,14 @@ class Saver
 
         # first, save category data, since it is present at all laws
         Configuration.categories.each do |category|
-          # category contains the current key like "legal bais" or "primarily responsible"
+          # category contains the current key like "legal basis" or "primarily responsible"
           row << law[category]
         end
 
         # second, save duration data
         processStepNames.sort.each do |processStepName|
           if law.key?(processStepName)
-            row << law.values_at(processStepName)
+            row << law.values_at(processStepName)[0]
           else
             row << ''
           end
@@ -61,39 +55,6 @@ class Saver
         # finally, join all elements together to form a string representation of
         # all the current law's contents which can be saved in the file
         line = row.join(Configuration.separator)
-
-  #      puts a = line[/.{2}(?=re phrase)/]
-  #      puts a[0]
-  #      puts a[1]
-        # hack to replace each occurence of Ã© by é and Ã¨ by è
-        # Ã  à
-        #Ã‰ É
-#         for i in 0..line.length - 1
-#           if line[i] == 195 and line[i + 1] == 169 # Ã©
-#             line[i] = 233 # = é
-#             line[i + 1] = '' # remove the following byte...
-#             i += 1 # ... and therefore, skip the following iteration step
-#           end
-# 
-#           if line[i] == 195 and line[i + 1] == 168 # Ã¨
-#             line[i] = 232 # = è
-#             line[i + 1] = '' # remove the following byte...
-#             i += 1 # ... and therefore, skip the following iteration step
-#           end
-# 
-#           if line[i] == 195 and line[i + 1] == 137 # Ã‰
-#             line[i] = 201 # = É
-#             line[i + 1] = '' # remove the following byte...
-#             i += 1 # ... and therefore, skip the following iteration step
-#           end
-# 
-#           if line[i] == 195 and line[i + 1] == 160 # Ã  (there are two characters(!))
-#             line[i] = 224 # = à
-#             line[i + 1] = '' # remove the following byte...
-#             i += 1 # ... and therefore, skip the following iteration step
-#           end
-#        end
-
         file.puts convertUTF8ToANSI(line)
       end
 

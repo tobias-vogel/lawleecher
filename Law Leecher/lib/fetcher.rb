@@ -232,10 +232,10 @@ class Fetcher
           processSteps = content[/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table.*?(?=<\/table>\s*<p><u><font face="arial"><font size=-2>Activities of the institutions:)/m]
           processSteps.gsub!(/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/, '')
           processSteps = processSteps.split(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/)
-          processSteps.last.gsub!(/<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*/, '')
+          processSteps.last.gsub!(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*/, '')
           # necessary if there is only one process step, because then, the split above doesn't remove whitespaces
           #processSteps.last.gsub!(/\s*/, '') if processSteps.size == 1
-          processSteps.last.strip! if processSteps.size == 1
+          #processSteps.last.strip! if processSteps.size == 1
 
           # iterate over processSteps, do 3 things:
           # first, add the process step name to the global list of process steps
@@ -260,16 +260,22 @@ class Fetcher
             
             stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
             
-            if stepName == 'AdoptionbyCommission'
-              #Win32::Sound.beep(100, 2000)
-              puts 'AdoptionbyCommission gefunden'
-            end
+#            if stepName == 'AdoptionbyCommission'
+#              #Win32::Sound.beep(100, 2000)
+#              puts 'AdoptionbyCommission gefunden'
+#            end
             
             #puts stepName + " => " + timeStamp
 
             # first (add to global list)
+            if stepName == "Commission position on EP amendments on 1st reading"
+              puts "komisches verhalten erreicht"
+              puts "processstepnamessize = " + processStepNames.size.to_s
+            end
             processStepNames << stepName
-
+            puts "processstepnamessize = " + processStepNames.size.to_s
+            puts processStepNames.include?("Commission position on EP amendments on 1st reading")
+            
             #second (parse date)
             parsedDate = Date._parse timeStamp
             
@@ -324,7 +330,7 @@ class Fetcher
 #        if ex.message == 'An existing connection was forcibly closed by the remote host.' or
 #           ex.message == 'end of file reached' 
         if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError  
-          puts "Zeit�berschreitung bei Gesetz ##{lawID}. Starte dieses Gesetz nochmal von vorne."
+          puts "Zeitüberschreitung bei Gesetz ##{lawID}. Starte dieses Gesetz nochmal von vorne."
           retry
         else
           puts "Es gab einen Fehler mit Gesetz ##{lawID}. Dieses Gesetz wird ignoriert."
