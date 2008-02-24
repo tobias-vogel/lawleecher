@@ -303,6 +303,7 @@ class Fetcher
               @timeOfFirstStep = time
             else
               #calculate the difference between first and current timeStamp
+              #seconds are returned, not milliseconds (!)
               duration = ((time - @timeOfFirstStep) / 60 / 60 / 24).floor
               timeStampOrDuration = duration
               lastDuration = duration
