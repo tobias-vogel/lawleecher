@@ -256,6 +256,11 @@ class Fetcher
           # since the dates are ordered chronological on the page
           lastDuration = 0
 
+          # states, whether the process step "Adoption by Commission" has been
+          # found in this law already
+          # if not, the appropriate hash entry has to be created and set to "[fehlt]"
+          adoptionByCommissionFoundForThisLaw = false
+          
           processSteps.each do |step|
             
             stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
@@ -272,6 +277,39 @@ class Fetcher
 #              puts "komisches verhalten erreicht"
 #              puts "processstepnamessize = " + processStepNames.size.to_s
 #            end
+
+            # prevent overwriting process step names of the same name which occured earlier in this law
+            # so: check, whether step name exists (e.g. "abc")
+            # if not: do nothing special and go on
+            # if yes: check, whether an extended step exists (e.g. "abc A")
+            #   if not: change the current stepName to an extended version (and add it also to the global processStepNames list)
+            #   if yes: change the current stepName to a successor of that stepName (and add it also to the global processStepNames list)
+            if arrayEntry.has_key? stepName
+              if arrayEntry.has_key? "#{stepName} A"
+                if arrayEntry.has_key? "#{stepName} B"
+                  if arrayEntry.has_key? "#{stepName} C"
+                    if arrayEntry.has_key? "#{stepName} D"
+                      if arrayEntry.has_key? "#{stepName} E"
+                        if arrayEntry.has_key? "#{stepName} F"
+                          if arrayEntry.has_key? "#{stepName} G"
+                            if arrayEntry.has_key? "#{stepName} H"
+                              if arrayEntry.has_key? "#{stepName} I"
+                                if arrayEntry.has_key? "#{stepName} J"
+                                  stepName = "#{stepName} J".next
+                                else stepName = "#{stepName} I".next end
+                              else stepName = "#{stepName} H".next end
+                            else stepName = "#{stepName} G".next end
+                          else stepName = "#{stepName} F".next end
+                        else stepName = "#{stepName} E".next end
+                      else stepName = "#{stepName} D".next end
+                    else stepName = "#{stepName} C".next end
+                  else stepName = "#{stepName} B".next end
+                else stepName = "#{stepName} A".next end
+              else
+                stepName = "#{stepName} A"
+              end
+            end
+            
             processStepNames << stepName
 #            puts "processstepnamessize = " + processStepNames.size.to_s
 #            puts processStepNames.include?("Commission position on EP amendments on 1st reading")
@@ -284,6 +322,11 @@ class Fetcher
               arrayEntry['Date of Signature by EP and Council'] = timeStamp
             end
             
+            # if "Adoption by Commission" has been found, the key hasn't to be
+            # set to "[fehlt]" in the end
+            if stepName == 'Adoption by Commission'
+              adoptionByCommissionFoundForThisLaw = true
+            end
             
             
             #second (parse date)
@@ -316,6 +359,11 @@ class Fetcher
           #puts lastDuration
           arrayEntry['DurationInformation'] = lastDuration
 
+          #if there was no "Adoption by Commission" process step,
+          #it has to be marked that way
+          arrayEntry['Adoption by Commission'] = '[fehlt]' unless adoptionByCommissionFoundForThisLaw
+          
+          
 #stepTimeHash.each {|i| puts i}
         rescue StandardError => ex
           puts 'Something went wrong during calculation of process step duration'
