@@ -279,64 +279,75 @@ class Fetcher
 #            end
 
             # prevent overwriting process step names of the same name which occured earlier in this law
-            # so: check, whether step name exists (e.g. "abc")
+            # therefore: extend a step name (e.g. "abc") by "A" (=> "abc A"), then "B" (=> "abc B") and so on
+            # 
+            # so: check, whether step name already exists in any level of extension (even without extension)
             # if not: do nothing special and go on
-            # if yes: check, whether an extended step exists (e.g. "abc A")
-            #   if not: change the current stepName to an extended version (and add it also to the global processStepNames list)
-            #   if yes: change the current stepName to a successor of that stepName (and add it also to the global processStepNames list)
-            if arrayEntry.has_key? stepName
-              if arrayEntry.has_key? "#{stepName} A"
-                if arrayEntry.has_key? "#{stepName} B"
-                  if arrayEntry.has_key? "#{stepName} C"
-                    if arrayEntry.has_key? "#{stepName} D"
-                      if arrayEntry.has_key? "#{stepName} E"
-                        if arrayEntry.has_key? "#{stepName} F"
-                          if arrayEntry.has_key? "#{stepName} G"
-                            if arrayEntry.has_key? "#{stepName} H"
-                              if arrayEntry.has_key? "#{stepName} I"
-                                if arrayEntry.has_key? "#{stepName} J"
-                                  if arrayEntry.has_key? "#{stepName} K"
-                                    if arrayEntry.has_key? "#{stepName} L"
-                                      if arrayEntry.has_key? "#{stepName} M"
-                                        if arrayEntry.has_key? "#{stepName} N"
-                                          if arrayEntry.has_key? "#{stepName} O"
-                                            if arrayEntry.has_key? "#{stepName} P"
-                                              if arrayEntry.has_key? "#{stepName} Q"
-                                                if arrayEntry.has_key? "#{stepName} R"
-                                                  if arrayEntry.has_key? "#{stepName} S"
-                                                    if arrayEntry.has_key? "#{stepName} T"
-                                                      if arrayEntry.has_key? "#{stepName} U"
-                                                        if arrayEntry.has_key? "#{stepName} V"
-                                                          if arrayEntry.has_key? "#{stepName} W"
-                                                            if arrayEntry.has_key? "#{stepName} X"
-                                                              if arrayEntry.has_key? "#{stepName} Y"
-                                                                stepName = "#{stepName} Z"
-                                                              else stepName = "#{stepName} Y" end
-                                                            else stepName = "#{stepName} X" end
-                                                          else stepName = "#{stepName} W" end
-                                                        else stepName = "#{stepName} V" end
-                                                      else stepName = "#{stepName} U" end
-                                                    else stepName = "#{stepName} T" end
-                                                  else stepName = "#{stepName} S" end
-                                                else stepName = "#{stepName} R" end
-                                              else stepName = "#{stepName} Q" end
-                                            else stepName = "#{stepName} P" end
-                                          else stepName = "#{stepName} O" end
-                                        else stepName = "#{stepName} N" end
-                                      else stepName = "#{stepName} M" end
-                                    else stepName = "#{stepName} L" end
-                                  else stepName = "#{stepName} K" end
-                                else stepName = "#{stepName} J" end
-                              else stepName = "#{stepName} I" end
-                            else stepName = "#{stepName} H" end
-                          else stepName = "#{stepName} G" end
-                        else stepName = "#{stepName} F" end
-                      else stepName = "#{stepName} E" end
-                    else stepName = "#{stepName} D" end
-                  else stepName = "#{stepName} C" end
-                else stepName = "#{stepName} B" end
-              else stepName = "#{stepName} A" end
+            # if yes: check, which is the highest level
+            #   if it's the step name itself, add " A" to it
+            #   if there are already extensions, do a .next! to proceed to the next level
+            highestLevelOfCurrentStepNameExtension = (arrayEntry.keys.grep(/#{stepName}( \w?)?/)).sort.max
+            if highestLevelOfCurrentStepNameExtension != nil
+              if highestLevelOfCurrentStepNameExtension == stepName
+                stepName += ' A'
+              else 
+                stepName.next!
+              end
             end
+#             unless highestLevelOfCurrentStepNameExtension == nil 
+#            if arrayEntry.has_key? stepName
+#              if arrayEntry.has_key? "#{stepName} A"
+#                if arrayEntry.has_key? "#{stepName} B"
+#                  if arrayEntry.has_key? "#{stepName} C"
+#                    if arrayEntry.has_key? "#{stepName} D"
+#                      if arrayEntry.has_key? "#{stepName} E"
+#                        if arrayEntry.has_key? "#{stepName} F"
+#                          if arrayEntry.has_key? "#{stepName} G"
+#                            if arrayEntry.has_key? "#{stepName} H"
+#                              if arrayEntry.has_key? "#{stepName} I"
+#                                if arrayEntry.has_key? "#{stepName} J"
+#                                  if arrayEntry.has_key? "#{stepName} K"
+#                                    if arrayEntry.has_key? "#{stepName} L"
+#                                      if arrayEntry.has_key? "#{stepName} M"
+#                                        if arrayEntry.has_key? "#{stepName} N"
+#                                          if arrayEntry.has_key? "#{stepName} O"
+#                                            if arrayEntry.has_key? "#{stepName} P"
+#                                              if arrayEntry.has_key? "#{stepName} Q"
+#                                                if arrayEntry.has_key? "#{stepName} R"
+#                                                  if arrayEntry.has_key? "#{stepName} S"
+#                                                    if arrayEntry.has_key? "#{stepName} T"
+#                                                      if arrayEntry.has_key? "#{stepName} U"
+#                                                        if arrayEntry.has_key? "#{stepName} V"
+#                                                          if arrayEntry.has_key? "#{stepName} W"
+#                                                            if arrayEntry.has_key? "#{stepName} X"
+#                                                              if arrayEntry.has_key? "#{stepName} Y"
+#                                                                stepName = "#{stepName} Z"
+#                                                              else stepName = "#{stepName} Y" end
+#                                                            else stepName = "#{stepName} X" end
+#                                                          else stepName = "#{stepName} W" end
+#                                                        else stepName = "#{stepName} V" end
+#                                                      else stepName = "#{stepName} U" end
+#                                                    else stepName = "#{stepName} T" end
+#                                                  else stepName = "#{stepName} S" end
+#                                                else stepName = "#{stepName} R" end
+#                                              else stepName = "#{stepName} Q" end
+#                                            else stepName = "#{stepName} P" end
+#                                          else stepName = "#{stepName} O" end
+#                                        else stepName = "#{stepName} N" end
+#                                      else stepName = "#{stepName} M" end
+#                                    else stepName = "#{stepName} L" end
+#                                  else stepName = "#{stepName} K" end
+#                                else stepName = "#{stepName} J" end
+#                              else stepName = "#{stepName} I" end
+#                            else stepName = "#{stepName} H" end
+#                          else stepName = "#{stepName} G" end
+#                        else stepName = "#{stepName} F" end
+#                      else stepName = "#{stepName} E" end
+#                    else stepName = "#{stepName} D" end
+#                  else stepName = "#{stepName} C" end
+#                else stepName = "#{stepName} B" end
+#              else stepName = "#{stepName} A" end
+#            end
             
             processStepNames << stepName
 #            puts "processstepnamessize = " + processStepNames.size.to_s
