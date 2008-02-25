@@ -291,7 +291,7 @@ class Fetcher
               if highestLevelOfCurrentStepNameExtension == stepName
                 stepName += ' A'
               else 
-                stepName.next!
+                stepName = highestLevelOfCurrentStepNameExtension.next
               end
             end
 #             unless highestLevelOfCurrentStepNameExtension == nil 
