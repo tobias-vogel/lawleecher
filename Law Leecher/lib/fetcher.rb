@@ -295,19 +295,47 @@ class Fetcher
                             if arrayEntry.has_key? "#{stepName} H"
                               if arrayEntry.has_key? "#{stepName} I"
                                 if arrayEntry.has_key? "#{stepName} J"
-                                  stepName = "#{stepName} J".next
-                                else stepName = "#{stepName} I".next end
-                              else stepName = "#{stepName} H".next end
-                            else stepName = "#{stepName} G".next end
-                          else stepName = "#{stepName} F".next end
-                        else stepName = "#{stepName} E".next end
-                      else stepName = "#{stepName} D".next end
-                    else stepName = "#{stepName} C".next end
-                  else stepName = "#{stepName} B".next end
-                else stepName = "#{stepName} A".next end
-              else
-                stepName = "#{stepName} A"
-              end
+                                  if arrayEntry.has_key? "#{stepName} K"
+                                    if arrayEntry.has_key? "#{stepName} L"
+                                      if arrayEntry.has_key? "#{stepName} M"
+                                        if arrayEntry.has_key? "#{stepName} N"
+                                          if arrayEntry.has_key? "#{stepName} O"
+                                            if arrayEntry.has_key? "#{stepName} P"
+                                              if arrayEntry.has_key? "#{stepName} Q"
+                                                if arrayEntry.has_key? "#{stepName} R"
+                                                  if arrayEntry.has_key? "#{stepName} S"
+                                                    if arrayEntry.has_key? "#{stepName} T"
+                                                      if arrayEntry.has_key? "#{stepName} U"
+                                                        if arrayEntry.has_key? "#{stepName} V"
+                                                          if arrayEntry.has_key? "#{stepName} W"
+                                                            if arrayEntry.has_key? "#{stepName} X"
+                                                              if arrayEntry.has_key? "#{stepName} Y"
+                                                                stepName = "#{stepName} Z"
+                                                              else stepName = "#{stepName} Y" end
+                                                            else stepName = "#{stepName} X" end
+                                                          else stepName = "#{stepName} W" end
+                                                        else stepName = "#{stepName} V" end
+                                                      else stepName = "#{stepName} U" end
+                                                    else stepName = "#{stepName} T" end
+                                                  else stepName = "#{stepName} S" end
+                                                else stepName = "#{stepName} R" end
+                                              else stepName = "#{stepName} Q" end
+                                            else stepName = "#{stepName} P" end
+                                          else stepName = "#{stepName} O" end
+                                        else stepName = "#{stepName} N" end
+                                      else stepName = "#{stepName} M" end
+                                    else stepName = "#{stepName} L" end
+                                  else stepName = "#{stepName} K" end
+                                else stepName = "#{stepName} J" end
+                              else stepName = "#{stepName} I" end
+                            else stepName = "#{stepName} H" end
+                          else stepName = "#{stepName} G" end
+                        else stepName = "#{stepName} F" end
+                      else stepName = "#{stepName} E" end
+                    else stepName = "#{stepName} D" end
+                  else stepName = "#{stepName} C" end
+                else stepName = "#{stepName} B" end
+              else stepName = "#{stepName} A" end
             end
             
             processStepNames << stepName
