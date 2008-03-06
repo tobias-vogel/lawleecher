@@ -1,0 +1,1 @@
+puts "ich bin in init.rb"
