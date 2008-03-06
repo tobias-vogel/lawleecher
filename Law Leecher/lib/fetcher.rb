@@ -2,7 +2,6 @@ require 'net/http'
 require 'set'
 require 'configuration.rb'
 require 'date/format'
-#require 'win32/sound'
 
 class Fetcher
   
@@ -34,16 +33,13 @@ class Fetcher
 
       lastEntryOnPage = content[/\d{1,5}\/\d{1,5}(?=<\/div>\s*<\/TD>\s*<\/TR>\s*<TR bgcolor=\"#(ffffcc|ffffff)\">\s*<TD colspan=\"2\" VALIGN=\"top\">\s*<FONT CLASS=\"texte\">.*<\/FONT>\s*<\/TD>\s*<\/TR>\s*<\/table>\s*<center>\s*<TABLE border=0 cellpadding=0 cellspacing=0>\s*<tr align=\"center\">\s*<\/tr>\s*<\/table>\s*<\/center>\s*<!-- BOTTOM NAVIGATION BAR)/]
 
-      lastEntry, maxEntries = lastEntryOnPage.split("/", 2)
+      lastEntry, maxEntries = lastEntryOnPage.split('/', 2)
 
       raise 'Not all laws on page. (last entry != number of entries)' unless lastEntry == maxEntries
 
 
       # second, the pagination buttons must not be present (at least no "page 2" button)
       raise 'There are pagination buttons, not all laws would be retrieved.' unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
-
-
-      #puts "#{maxEntries} laws found for #{type}"
 
 
       #fetch out ids for each single law as array and append it to the current set of ids
@@ -53,7 +49,7 @@ class Fetcher
       lawIDsFromCurrentType.delete 219546 # this law is is an empty entry
       lawIDs += lawIDsFromCurrentType
       
-      informUser({'status' => "#{maxEntries} laws found for #{type}"})
+      informUser({'status' => "#{maxEntries} Gesetze vom Typ #{type} gefunden"})
       
     end # of current type
 
@@ -65,9 +61,7 @@ class Fetcher
 
     raise 'There were laws which occured on different pages.' if lawIDs.size != numberOfLaws
 
-    #puts "#{numberOfLaws} laws found in total"
-    
-    informUser({'status' => "#{numberOfLaws} laws found in total"})
+    informUser({'status' => "#{numberOfLaws} Gesetze insgesamt gefunden"})
     
     return lawIDs
   end
@@ -96,28 +90,17 @@ class Fetcher
     # set of process step names (will be collected to be used for the csv file columns)
     processStepNames = Set.new
     
-    # number of retries, if remote host closed connection error occured
-    # then, the current lawID is appended to lawIDs and to avoid, retriesLeft is
-    # decremented before the end of lawIDs.each
-    # probably, lawIDs.each will only be iterated 2 times at most
-    #retriesLeft = 5
-    
     # for each lawID, submit HTTP GET request for fetching out the information of interest  
     lawIDs.each do |lawID|
-#lawID = 105604
-      #puts ""
-    
-      #puts "vorne"
 
       begin # start try block
 
         # save this to calculate the average duration
         metaStartTime = Time.now
 
-        #puts "retrieving law ##{lawID} (#{currentLawCount}/#{lawIDs.size})"
-        informUser({'status' => "retrieving law ##{lawID}",
-                    'progressBarText' => "#{currentLawCount}/#{lawIDs.size}",
-                    'progressBarIncrement' => 1.0 / lawIDs.size})
+        informUser({'status' => "Analysiere Gesetz ##{lawID}",
+            'progressBarText' => "#{currentLawCount}/#{lawIDs.size}",
+            'progressBarIncrement' => 1.0 / lawIDs.size})
         
         response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
         content = response.body
@@ -228,20 +211,15 @@ class Fetcher
         # create a hash with a time object as key and the name of the process step as value
         # then it will be automatically sorted by time and we can give out the values one after another
         begin
-          #puts content[40000..50000]
           processSteps = content[/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table.*?(?=<\/table>\s*<p><u><font face="arial"><font size=-2>Activities of the institutions:)/m]
           processSteps.gsub!(/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/, '')
           processSteps = processSteps.split(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/)
           processSteps.last.gsub!(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*/, '')
-          # necessary if there is only one process step, because then, the split above doesn't remove whitespaces
-          #processSteps.last.gsub!(/\s*/, '') if processSteps.size == 1
-          #processSteps.last.strip! if processSteps.size == 1
 
           # iterate over processSteps, do 3 things:
           # first, add the process step name to the global list of process steps
           # second, transform date into a time object to calculate with it
           # third, build up Hash (step name => timestamp resp. difference)
-          #stepTimeHash = {}
 
           # create the variable here to have a scope over the next iterator
           @timeOfFirstStep = nil
@@ -265,18 +243,6 @@ class Fetcher
             
             stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
             
-#            if stepName == 'AdoptionbyCommission'
-#              #Win32::Sound.beep(100, 2000)
-#              puts 'AdoptionbyCommission gefunden'
-#            end
-            
-            #puts stepName + " => " + timeStamp
-
-            # first (add to global list)
-#            if stepName == "Commission position on EP amendments on 1st reading"
-#              puts "komisches verhalten erreicht"
-#              puts "processstepnamessize = " + processStepNames.size.to_s
-#            end
 
             # prevent overwriting process step names of the same name which occured earlier in this law
             # therefore: extend a step name (e.g. "abc") by "A" (=> "abc A"), then "B" (=> "abc B") and so on
@@ -294,65 +260,8 @@ class Fetcher
                 stepName = highestLevelOfCurrentStepNameExtension.next
               end
             end
-#             unless highestLevelOfCurrentStepNameExtension == nil 
-#            if arrayEntry.has_key? stepName
-#              if arrayEntry.has_key? "#{stepName} A"
-#                if arrayEntry.has_key? "#{stepName} B"
-#                  if arrayEntry.has_key? "#{stepName} C"
-#                    if arrayEntry.has_key? "#{stepName} D"
-#                      if arrayEntry.has_key? "#{stepName} E"
-#                        if arrayEntry.has_key? "#{stepName} F"
-#                          if arrayEntry.has_key? "#{stepName} G"
-#                            if arrayEntry.has_key? "#{stepName} H"
-#                              if arrayEntry.has_key? "#{stepName} I"
-#                                if arrayEntry.has_key? "#{stepName} J"
-#                                  if arrayEntry.has_key? "#{stepName} K"
-#                                    if arrayEntry.has_key? "#{stepName} L"
-#                                      if arrayEntry.has_key? "#{stepName} M"
-#                                        if arrayEntry.has_key? "#{stepName} N"
-#                                          if arrayEntry.has_key? "#{stepName} O"
-#                                            if arrayEntry.has_key? "#{stepName} P"
-#                                              if arrayEntry.has_key? "#{stepName} Q"
-#                                                if arrayEntry.has_key? "#{stepName} R"
-#                                                  if arrayEntry.has_key? "#{stepName} S"
-#                                                    if arrayEntry.has_key? "#{stepName} T"
-#                                                      if arrayEntry.has_key? "#{stepName} U"
-#                                                        if arrayEntry.has_key? "#{stepName} V"
-#                                                          if arrayEntry.has_key? "#{stepName} W"
-#                                                            if arrayEntry.has_key? "#{stepName} X"
-#                                                              if arrayEntry.has_key? "#{stepName} Y"
-#                                                                stepName = "#{stepName} Z"
-#                                                              else stepName = "#{stepName} Y" end
-#                                                            else stepName = "#{stepName} X" end
-#                                                          else stepName = "#{stepName} W" end
-#                                                        else stepName = "#{stepName} V" end
-#                                                      else stepName = "#{stepName} U" end
-#                                                    else stepName = "#{stepName} T" end
-#                                                  else stepName = "#{stepName} S" end
-#                                                else stepName = "#{stepName} R" end
-#                                              else stepName = "#{stepName} Q" end
-#                                            else stepName = "#{stepName} P" end
-#                                          else stepName = "#{stepName} O" end
-#                                        else stepName = "#{stepName} N" end
-#                                      else stepName = "#{stepName} M" end
-#                                    else stepName = "#{stepName} L" end
-#                                  else stepName = "#{stepName} K" end
-#                                else stepName = "#{stepName} J" end
-#                              else stepName = "#{stepName} I" end
-#                            else stepName = "#{stepName} H" end
-#                          else stepName = "#{stepName} G" end
-#                        else stepName = "#{stepName} F" end
-#                      else stepName = "#{stepName} E" end
-#                    else stepName = "#{stepName} D" end
-#                  else stepName = "#{stepName} C" end
-#                else stepName = "#{stepName} B" end
-#              else stepName = "#{stepName} A" end
-#            end
             
             processStepNames << stepName
-#            puts "processstepnamessize = " + processStepNames.size.to_s
-#            puts processStepNames.include?("Commission position on EP amendments on 1st reading")
-#            
             
             
             # save the signature timestamp additionally
@@ -368,7 +277,7 @@ class Fetcher
             end
             
             
-            #second (parse date)
+            # second (parse date)
             parsedDate = Date._parse timeStamp
             
             # if year is critical or (is it not, but) offset has been used in an
@@ -395,7 +304,6 @@ class Fetcher
             arrayEntry[stepName] = timeStampOrDuration
           end
           
-          #puts lastDuration
           arrayEntry['DurationInformation'] = lastDuration
 
           #if there was no "Adoption by Commission" process step,
@@ -403,7 +311,7 @@ class Fetcher
           arrayEntry['Adoption by Commission'] = Configuration.missingEntry unless adoptionByCommissionFoundForThisLaw
           
           
-#stepTimeHash.each {|i| puts i}
+
         rescue StandardError => ex
           puts 'Something went wrong during calculation of process step duration'
           puts ex.message
@@ -425,8 +333,6 @@ class Fetcher
 
       rescue Exception => ex
         
-#        if ex.message == 'An existing connection was forcibly closed by the remote host.' or
-#           ex.message == 'end of file reached' 
         if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError  
           puts "Zeitüberschreitung bei Gesetz ##{lawID}. Starte dieses Gesetz nochmal von vorne."
           retry
@@ -438,7 +344,6 @@ class Fetcher
           thereHaveBeenErrors = true
         end
       end #of exception handling
-#        arrayEntry.each {|i, j| puts "#{i} => #{j}"; puts}
     end
     
     return results, processStepNames.to_a, thereHaveBeenErrors
@@ -447,26 +352,19 @@ class Fetcher
   
 
   
-private
+  private
   # fetches HTTP requests which use redirects
   def fetch(uri_str, limit = 10)
     # You should choose better exception.
     raise ArgumentError, 'HTTP redirect too deep' if limit == 0
 
-#    begin
-      response = Net::HTTP.get_response(URI.parse(uri_str))
-      case response
-          when Net::HTTPSuccess then response
-          when Net::HTTPRedirection then fetch(response['location'], limit - 1)
-      else
-          response.error!
-      end
-#    rescue Exception => ex
-#      puts ex
-#      puts ex.class
-#      puts ex.message
-#      puts ex.backtrace
-#    end
+    response = Net::HTTP.get_response(URI.parse(uri_str))
+    case response
+      when Net::HTTPSuccess then response
+      when Net::HTTPRedirection then fetch(response['location'], limit - 1)
+    else
+      response.error!
+    end
   end
   
   

@@ -6,7 +6,6 @@ class GUI
     
     window = Gtk::Window.new('Law Leecher')
     window.set_border_width 10
-    #window.set_size_request 500, 200
     window.set_default_size 1, 1
     window.set_resizable false
 
@@ -14,12 +13,8 @@ class GUI
     table = Gtk::Table.new(5, 6, false)
     table.set_column_spacings 30
     table.set_row_spacings 5
-    #table.set_size_request 300, 300
 
 
-
-    #welcomeLabel = Gtk::Label.new("Bedienung:\n1.) Dateinamen festlegen\n2.) Start drücken\n\n")
-    #welcomeLabel.justify= Gtk::JUSTIFY_LEFT
 
     fileChooserTextLabel = Gtk::Label.new('Dateiname')
     fileNameEntry = Gtk::Entry.new()
@@ -36,14 +31,11 @@ class GUI
 
 
 
-    #progressTextLabel = Gtk::Label.new('Fortschritt')
-
     @progressBar = Gtk::ProgressBar.new
     @progressBar.text = ''
 
 
 
-    #statusTextLabel = Gtk::Label.new('Status')
 
     @statusLabel = Gtk::Label.new
     @statusLabel.justify= Gtk::JUSTIFY_LEFT
@@ -53,7 +45,7 @@ class GUI
 
 
 
-    #signals #######################################################################
+    #signals ###################################################################
 
     window.signal_connect('delete_event') {
       Gtk::main_quit
@@ -92,15 +84,6 @@ class GUI
           Gtk.main_iteration
         end
         @theCore.startProcess
-  #      10000.times {
-  #        @progressBar.set_fraction(progressBar.fraction + 0.0001)
-  #        100000.times {1}
-  #        while Gtk.events_pending?
-  #          Gtk.main_iteration
-  #        end
-  #      }
-  #      #5.times {@progressBar.set_fraction [1, progressBar.fraction + 0.1].min}
-  #      #rechnelange *@progressBar
         startButton.set_sensitive true
         fileChooserButton.set_sensitive true
         fileNameEntry.set_sensitive true
@@ -122,11 +105,9 @@ class GUI
 
 
 
-    #pack ##########################################################################
+    #pack ######################################################################
 
     window.add(table)
-
-    #table.attach(welcomeLabel, 0, 2, 0, 1, 0, 0, 0, 0)
 
     table.attach(fileChooserTextLabel, 0, 1, 0, 1, 0, 0, 0, 0)
     table.attach(fileNameEntry, 1, 5, 0, 1, 0, 0, 0, 0)
@@ -136,19 +117,13 @@ class GUI
     table.attach(overWriteButtonLabel, 1, 4, 1, 2, 0, 0, 0, 0)
     
     table.attach(startButton, 0, 1, 2, 3, Gtk::FILL, 0, 0, 0)
-    #table.attach(progressTextLabel, 0, 2, 3, 4, 0, 0, 0, 0)
     table.attach(@progressBar, 1, 6, 2, 3, Gtk::FILL, 0, 0, 0)
 
-    #table.attach(statusTextLabel, 0, 2, 4, 5, 0, 0, 0, 0)
     table.attach(@statusLabel, 0, 6, 3, 4, 0, 0, 0, 0)
 
     window.show_all
   end
   
-#  def warn(message)
-#    puts message
-#    puts "ACHTUNG, METHODE NOCH NICHT IMPLEMENTIERT (GUI.warn)"
-#  end
   
   def run
     Gtk.main

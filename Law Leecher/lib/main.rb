@@ -4,7 +4,6 @@
 # - there are laws which started before 1.1.1960 or which end after 23.12.2069
 #   or which end after 23.12.2059 if they started between 1.1.1960 1.1.1070
 # - entries contain a # in the text
-# - there are special characters used which differ from É, é, è, à
 require 'g_u_i.rb'
 require 'core.rb'
 
@@ -14,7 +13,6 @@ gui = GUI.new(theCore)
 theCore.addGuiPointer gui
 
 begin
-  #exit if RUBYSCRIPT2EXE.is_compiling?
   gui.run
 rescue
   puts $!

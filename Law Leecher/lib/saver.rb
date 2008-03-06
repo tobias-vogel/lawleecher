@@ -17,14 +17,14 @@ class Saver
   end
 
   def convertUTF8ToANSI(string)
-    return Iconv.new("iso-8859-1", "utf-8").iconv(string)
+    return Iconv.new('iso-8859-1', 'utf-8').iconv(string)
   end
   
   def save(laws, processStepNames, filename)
     informUser({'status' => "Speichere in #{filename}..."})
     
     begin
-      file = File.new(filename, "w")
+      file = File.new(filename, 'w')
 
       # write header in file
       # Configuration.categories + processStepNames contain all keys of the laws,
@@ -62,18 +62,15 @@ class Saver
 
 
       # do some statistics
-      puts "#{laws.size} laws written into #{filename}"
+      puts "#{laws.size} Gesetze wurden in #{filename} geschrieben."
 
-      #puts 'There have been errors during processing.' if thereHaveBeenErrors
 
 
       sum = 0
       averageDuration = 0
       laws.each {|i| sum += i['MetaDuration']}
-      #puts "total duration: #{sum / 60} minutes"
       averageDuration = sum / laws.size unless laws.size == 0
-      #puts "average duration per law: #{averageDuration} seconds"
-      return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich pro Gesetz #{"%.2f"%averageDuration} Sekunden"})
+      return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich #{"%.2f"%averageDuration} Sekunden pro Gesetz"})
     end
   rescue
     return ({'status' => "Datei #{filename} konnte nicht geöffnet werden. Wird sie von einem anderen Programm benutzt?"})

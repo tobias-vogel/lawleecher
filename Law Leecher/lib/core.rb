@@ -11,7 +11,6 @@ class Core
     @processStepNames = []
     
     # name of the export file
-    #TODO ist das auch der pfad?
     @filename = Configuration.defaultFilename
     
     # the law information (array of hash arrays)
@@ -30,12 +29,8 @@ class Core
     @theGui = theGui
   end
 
-#  def informUser(message)
-#    @theGui.printAndRefresh message
-#  end
-  
   def startProcess
-    lawIDs = @theFetcher.retrieveLawIDs()  #TODO hier callback dazufügen {@theGui.informUser}
+    lawIDs = @theFetcher.retrieveLawIDs()
     
     @laws, @processStepNames, errors = @theFetcher.retrieveLawContents(lawIDs)
     
@@ -49,6 +44,7 @@ class Core
     
   end
   
+  # callback to the gui
   def callback(bunchOfInformation)
     puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
     @theGui.updateWidgets(bunchOfInformation)    
