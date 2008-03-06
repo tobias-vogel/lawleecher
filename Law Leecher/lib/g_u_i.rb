@@ -145,10 +145,10 @@ class GUI
     window.show_all
   end
   
-  def warn(message)
-    puts message
-    puts "ACHTUNG, METHODE NOCH NICHT IMPLEMENTIERT (GUI.warn)"
-  end
+#  def warn(message)
+#    puts message
+#    puts "ACHTUNG, METHODE NOCH NICHT IMPLEMENTIERT (GUI.warn)"
+#  end
   
   def run
     Gtk.main

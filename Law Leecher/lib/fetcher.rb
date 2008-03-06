@@ -136,7 +136,7 @@ class Fetcher
           raise if fieldsOfActivity.empty?
         rescue
           #this law does not have "fields of activity" data
-          fieldsOfActivity = '[fehlt]'
+          fieldsOfActivity = Configuration.missingEntry
         end
         arrayEntry['Fields of activity'] = fieldsOfActivity
 
@@ -151,7 +151,7 @@ class Fetcher
           raise if legalBasis.empty?
         rescue
           # this law does not have "legal basis" data
-          legalBasis = '[fehlt]'
+          legalBasis = Configuration.missingEntry
         end
         arrayEntry['Legal basis'] = legalBasis
 
@@ -169,7 +169,7 @@ class Fetcher
           raise if procedures.empty?
         rescue
           # this law does not have "procedures" data
-          procedures = '[fehlt]'
+          procedures = Configuration.missingEntry
         end
         arrayEntry['Procedures'] = procedures
 
@@ -187,7 +187,7 @@ class Fetcher
           raise if typeOfFile.empty?
         rescue
           # this law does not have "type of file" data
-          typeOfFile = '[fehlt]'
+          typeOfFile = Configuration.missingEntry
         end
         arrayEntry['Type of File'] = typeOfFile
 
@@ -203,7 +203,7 @@ class Fetcher
           raise if primarilyResponsible.empty?
         rescue
           # this law does not have "primarily responsible" data
-          primarilyResponsible = '[fehlt]'
+          primarilyResponsible = Configuration.missingEntry
         end
         arrayEntry['Primarily Responsible'] = primarilyResponsible
 
@@ -217,7 +217,7 @@ class Fetcher
           raise if type.empty?
         rescue
           # this law does not have "type" data
-          type = '[fehlt]'
+          type = Configuration.missingEntry
         end
         arrayEntry['Type'] = type
 
@@ -258,7 +258,7 @@ class Fetcher
 
           # states, whether the process step "Adoption by Commission" has been
           # found in this law already
-          # if not, the appropriate hash entry has to be created and set to "[fehlt]"
+          # if not, the appropriate hash entry has to be created and set to Configuration.missingEntry
           adoptionByCommissionFoundForThisLaw = false
           
           processSteps.each do |step|
@@ -362,7 +362,7 @@ class Fetcher
             end
             
             # if "Adoption by Commission" has been found, the key hasn't to be
-            # set to "[fehlt]" in the end
+            # set to Configuration.missingEntry in the end
             if stepName == 'Adoption by Commission'
               adoptionByCommissionFoundForThisLaw = true
             end
@@ -400,7 +400,7 @@ class Fetcher
 
           #if there was no "Adoption by Commission" process step,
           #it has to be marked that way
-          arrayEntry['Adoption by Commission'] = '[fehlt]' unless adoptionByCommissionFoundForThisLaw
+          arrayEntry['Adoption by Commission'] = Configuration.missingEntry unless adoptionByCommissionFoundForThisLaw
           
           
 #stepTimeHash.each {|i| puts i}

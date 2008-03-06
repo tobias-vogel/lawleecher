@@ -2,7 +2,7 @@ class Configuration
   # law types to crawl
   @@types = %w{AVC SYN COD CNS}
   def Configuration.types
-    @@types#[0]
+    @@types#first
   end
 
   # year filter to apply (empty string for all years)
@@ -22,6 +22,12 @@ class Configuration
   @@separator = '#'
   def Configuration.separator
     @@separator
+  end
+
+  # the text which is put if a key has no value on the website
+  @@missingEntry = '[fehlt]'
+  def Configuration.missingEntry
+    @@missingEntry
   end
   
   # categories to crawl
