@@ -1,3 +1,10 @@
+################################################################################
+# This program/software is provided under the BSD license. (3-clause BSD)      #
+# You may modify the program and distribute it, but you have to name the       #
+# original author:                                                             #
+# Tobias Vogel (tobias@vogel.name)                                             #
+################################################################################
+
 require 'core'
 require 'g_u_i.rb'
 
