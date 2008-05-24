@@ -23,11 +23,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Configuration
-  # law types to crawl
-  @@types = %w{AVC SYN COD CNS}
-  def Configuration.types
-    @@types#.first           # to temporarily reduce the number of laws to crawl
-  end
 
   # year filter to apply (empty string for all years)
   @@year = '' #+ '2000'      # to temporarily reduce the number of laws to crawl
@@ -35,8 +30,8 @@ class Configuration
     @@year
   end
   
-  # maximum hits per form submit (originally: 99)
-  @@numberOfMaxHitsPerPage = 10000
+  # maximum hits per form submit (originally: 99, default: 20)
+  @@numberOfMaxHitsPerPage = 1000000
   def Configuration.numberOfMaxHitsPerPage
     @@numberOfMaxHitsPerPage
   end
@@ -66,7 +61,7 @@ class Configuration
   end
   
   # version of the program
-  @@version = '1.0'
+  @@version = '1.1'
   def Configuration.version
     @@version
   end

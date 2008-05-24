@@ -41,52 +41,44 @@ class Fetcher
     #array containing all law ids
     lawIDs = Array.new
     
-    Configuration.types.each do |type|
-      puts "looking for #{type} laws..."
-      # start query for current type
-      response = Net::HTTP.start('ec.europa.eu').post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=#{type}&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
-
-      content = response.body
-
-
-      # check, whether all hits are on the page
-      # there are two ways to check it, we use both for safety reasons
-
-      # first, compare the last number with the max number (e.g. 46/2110)
-      # if it's equal, all hits are on this page, which is good, otherwise: bad
-
-      lastEntryOnPage = content[/\d{1,5}\/\d{1,5}(?=<\/div>\s*<\/TD>\s*<\/TR>\s*<TR bgcolor=\"#(ffffcc|ffffff)\">\s*<TD colspan=\"2\" VALIGN=\"top\">\s*<FONT CLASS=\"texte\">.*<\/FONT>\s*<\/TD>\s*<\/TR>\s*<\/table>\s*<center>\s*<TABLE border=0 cellpadding=0 cellspacing=0>\s*<tr align=\"center\">\s*<\/tr>\s*<\/table>\s*<\/center>\s*<!-- BOTTOM NAVIGATION BAR)/]
-
-      lastEntry, maxEntries = lastEntryOnPage.split('/', 2)
-
-      raise 'Not all laws on page. (last entry != number of entries)' unless lastEntry == maxEntries
-
-
-      # second, the pagination buttons must not be present (at least no "page 2" button)
-      raise 'There are pagination buttons, not all laws would be retrieved.' unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
-
-
-      #fetch out ids for each single law as array and append it to the current set of ids
-      #the uniq! removes double ids (<a href="id">id</a>)
-      lawIDsFromCurrentType = content.scan(/\d{1,6}(?=" title="Click here to reach the detail page of this file">)/)
-      lawIDsFromCurrentType.uniq! # to eliminate the twin of each law id (which is inevitably included)
-      lawIDsFromCurrentType.delete 219546 # this law is is an empty entry
-      lawIDs += lawIDsFromCurrentType
-      
-      informUser({'status' => "#{maxEntries} Gesetze vom Typ #{type} gefunden"})
-      
-    end # of current type
-
-    #now, all law IDs are contained in the array
-
-    #assure that there are no doublicated ids in the array (which should not be the case)
-    numberOfLaws = lawIDs.size
-    lawIDs.uniq!
-
-    raise 'There were laws which occured on different pages.' if lawIDs.size != numberOfLaws
-
-    informUser({'status' => "#{numberOfLaws} Gesetze insgesamt gefunden"})
+    http = Net::HTTP.start('ec.europa.eu')
     
+    # we will retrieve a 25 MB HTML file, which might take longer
+    http.read_timeout = 300
+    http.open_timeout = 300
+
+    informUser({'status' => 'Frage alle Gesetze an. Das könnte einen Moment dauern.'})
+    response = http.post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
+
+    content = response.body
+
+
+    # check, whether all hits are on the page
+    # there are two ways to check it, we use both for safety reasons
+
+    # first, compare the last number with the max number (e.g. 46/2110)
+    # if it's equal, all hits are on this page, which is good, otherwise: bad
+
+    lastEntryOnPage = content[/\d{1,5}\/\d{1,5}(?=<\/div>\s*<\/TD>\s*<\/TR>\s*<TR bgcolor=\"#(ffffcc|ffffff)\">\s*<TD colspan=\"2\" VALIGN=\"top\">\s*<FONT CLASS=\"texte\">.*<\/FONT>\s*<\/TD>\s*<\/TR>\s*<\/table>\s*<center>\s*<TABLE border=0 cellpadding=0 cellspacing=0>\s*<tr align=\"center\">\s*<\/tr>\s*<\/table>\s*<\/center>\s*<!-- BOTTOM NAVIGATION BAR)/]
+
+    lastEntry, maxEntries = lastEntryOnPage.split('/', 2)
+
+    raise 'Not all laws on page. (last entry != number of entries)' unless lastEntry == maxEntries
+
+
+    # second, the pagination buttons must not be present (at least no "page 2" button)
+    raise 'There are pagination buttons, not all laws would be retrieved.' unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
+
+
+    #fetch out ids for each single law as array and append it to the current set of ids
+    #the uniq! removes double ids (<a href="id">id</a>)
+    lawIDs = content.scan(/\d{1,6}(?=" title="Click here to reach the detail page of this file">)/)
+    lawIDs.uniq! # to eliminate the twin of each law id (which is inevitably included)
+    lawIDs.delete 219546 # this law is is an empty entry
+
+    informUser({'status' => "#{maxEntries} Gesetze gefunden"})
+      
+
     return lawIDs
   end
   
@@ -133,6 +125,15 @@ class Fetcher
         arrayEntry = Hash.new
 
         # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
+        
+        
+        # check, whether the current law is desired
+        preamble = content[/<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face=\"Arial\"><font size=-2>.*?<\/font><\/font>/m]
+        # If none of the keywords is appearing at the given position on the law page, the law has to be ommitted.
+        if preamble[/DIRECTIVE/].nil? and preamble[/REGULATION/].nil? and preamble[/DECISION/].nil? then
+          puts 'This law is ommitted due to missing keywords.'
+          next
+        end
 
 
         # find out the value for "fields of activity"
@@ -217,7 +218,7 @@ class Fetcher
 
 
 
-        # find out the law type (has been forgotten since only law IDs were saved)
+        # find out the law type
         begin
           type = content[/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/]
           type.gsub!(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, '')
@@ -235,7 +236,7 @@ class Fetcher
         # create a hash with a time object as key and the name of the process step as value
         # then it will be automatically sorted by time and we can give out the values one after another
         begin
-          processSteps = content[/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table.*?(?=<\/table>\s*<p><u><font face="arial"><font size=-2>Activities of the institutions:)/m]
+          processSteps = content[/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table.*?(?=<\/table>)/m]
           processSteps.gsub!(/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/, '')
           processSteps = processSteps.split(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td>\s*<div align="left">\s*<span class="exemple">\s*<a href="#\d{5,6}" style="color: Black;">\s*/)
           processSteps.last.gsub!(/\s*<\/span>\s*<\/div>\s*<\/td>\s*<\/tr>\s*/, '')
