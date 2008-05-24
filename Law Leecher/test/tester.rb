@@ -12,7 +12,7 @@ core = Core.new
 core.addGuiPointer(GUI.new(core))
 fetcher = Fetcher.new(core)
 
-lawsToDebug = []
+lawsToDebug = [190688, 190817, 115427]
 
 results, processStepNames = fetcher.retrieveLawContents(lawsToDebug)
 Saver.new(core).save(results, processStepNames, "c:\\export.csv")
