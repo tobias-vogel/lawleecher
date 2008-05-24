@@ -86,7 +86,7 @@ class Saver
 
 
       # do some statistics
-      puts "#{laws.size} Gesetze wurden in #{filename} geschrieben."
+      puts "#{laws.size} Gesetz(e) wurden in #{filename} geschrieben."
 
 
 
@@ -96,7 +96,8 @@ class Saver
       averageDuration = sum / laws.size unless laws.size == 0
       return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich #{"%.2f"%averageDuration} Sekunden pro Gesetz"})
     end
-  rescue
+  rescue Exception => ex
+    puts ex
     return ({'status' => "Datei #{filename} konnte nicht geöffnet werden. Wird sie von einem anderen Programm benutzt?"})
   end
 end

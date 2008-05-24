@@ -124,8 +124,14 @@ class Fetcher
         # prepare array containing all information for the current law
         arrayEntry = Hash.new
 
-        # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
         
+
+        # check, whether a data base error occured
+        if !content[/<H1>Database Error<\/H1>/].nil? then
+          puts 'This law produced a data base error and thus, is ommitted.'
+          next
+        end
+
         
         # check, whether the current law is desired
         preamble = content[/<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face=\"Arial\"><font size=-2>.*?<\/font><\/font>/m]
@@ -135,7 +141,12 @@ class Fetcher
           next
         end
 
+        
+        
+        
+        # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
 
+        
         # find out the value for "fields of activity"
         begin
           fieldsOfActivity = content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
@@ -304,6 +315,9 @@ class Fetcher
             
             # second (parse date)
             parsedDate = Date._parse timeStamp
+            
+            # this occurs only with law #115427
+            parsedDate[:year] = 1986 if parsedDate[:year] == 986
             
             # if year is critical or (is it not, but) offset has been used in an
             # earlier iteration within this law
