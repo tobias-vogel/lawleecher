@@ -41,7 +41,13 @@ class Saver
   end
 
   def convertUTF8ToANSI(string)
-    return Iconv.new('iso-8859-1', 'utf-8').iconv(string)
+    begin
+      Iconv.new('iso-8859-1', 'utf-8').iconv(string)  
+    rescue Iconv::IllegalSequence => is
+      puts "Unicode character conversion error: #{is.message}"
+      puts "Writing it inconverted"
+      return string
+    end
   end
   
   def save(laws, processStepNames, filename)
@@ -96,8 +102,8 @@ class Saver
       averageDuration = sum / laws.size unless laws.size == 0
       return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich #{"%.2f"%averageDuration} Sekunden pro Gesetz"})
     end
+  
   rescue Exception => ex
-    puts ex
     return ({'status' => "Datei #{filename} konnte nicht geöffnet werden. Wird sie von einem anderen Programm benutzt?"})
   end
 end

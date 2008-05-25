@@ -12,10 +12,8 @@ core = Core.new
 core.addGuiPointer(GUI.new(core))
 fetcher = Fetcher.new(core)
 
-lawsToDebug = [129988]
+lawsToDebug = []
 
 results, processStepNames = fetcher.retrieveLawContents(lawsToDebug)
-
-#10000.times {results << results.first}
 
 Saver.new(core).save(results, processStepNames, "c:\\export.csv")
