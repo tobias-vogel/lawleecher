@@ -133,19 +133,66 @@ class Fetcher
         end
 
         
-        # check, whether the current law is desired
-        preamble = content[/<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face=\"Arial\"><font size=-2>.*?<\/font><\/font>/m]
-        # If none of the keywords is appearing at the given position on the law page, the law has to be ommitted.
-        if preamble[/DIRECTIVE/].nil? and preamble[/REGULATION/].nil? and preamble[/DECISION/].nil? then
-          puts 'This law is ommitted due to missing keywords.'
-          next
-        end
-
         
+        
+        
+        # the preamble has no key words, so it will be extracted first as whole (for safety) and then is divided into the three parts
+        preamble = content[/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>.*?<\/font><\/font>\s*<\/td>\s*<\/tr>/m]
         
         
         # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
+        
+        # find out the value for the upper left identifier
+        begin
+          upperLeftIdentifier = preamble[/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?(?=<\/font><\/font><\/b>\s*<\/td>)/m]
+          upperLeftIdentifier.gsub!(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/m, '')
+          upperLeftIdentifier = clean(upperLeftIdentifier)
+          raise if upperLeftIdentifier.empty?
+        rescue
+          #this law does not have data for the upper left identifier
+          upperLeftIdentifier = Configuration.missingEntry
+        end
+        arrayEntry['Upper left identifier'] = upperLeftIdentifier
+        
 
+
+
+
+
+        # find out the value for the upper center identifier
+        begin
+          upperCenterIdentifier = preamble[/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)/m]
+          upperCenterIdentifier.gsub!(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/m, '')
+          upperCenterIdentifier = clean(upperCenterIdentifier)
+          raise if upperCenterIdentifier.empty?
+        rescue
+          #this law does not have data for the upper center identifier
+          upperCenterIdentifier = Configuration.missingEntry
+        end
+        arrayEntry['Upper center identifier'] = upperCenterIdentifier
+        
+        
+        
+        
+        
+        
+        
+        # find out the value for the short description
+        begin
+          shortDescription = preamble[/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)/m]
+          shortDescription.gsub!(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/m, '')
+          shortDescription= clean(shortDescription)
+          raise if shortDescription.empty?
+        rescue
+          #this law does not have data for the short description
+          shortDescription = Configuration.missingEntry
+        end
+        arrayEntry['Short description'] = shortDescription
+        
+        
+        
+        
+        
         
         # find out the value for "fields of activity"
         begin

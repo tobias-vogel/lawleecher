@@ -25,7 +25,8 @@
 class Configuration
 
   # year filter to apply (empty string for all years)
-  @@year = ''# + '1970'      # to temporarily reduce the number of laws to crawl
+  @@year = ''
+  # @@year += '1970'      # to temporarily reduce the number of laws to crawl
   def Configuration.year
     @@year
   end
@@ -49,7 +50,7 @@ class Configuration
   end
   
   # categories to crawl
-  @@categories = ['Type', 'ID', 'Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible', 'DurationInformation']
+  @@categories = ['Type', 'ID', 'Upper left identifier', 'Upper center identifier', 'Short description', 'Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible', 'DurationInformation']
   def Configuration.categories
     @@categories
   end
