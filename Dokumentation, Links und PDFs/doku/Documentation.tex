@@ -3,12 +3,13 @@
 \usepackage[T1]{fontenc}
 \usepackage{url}
 \usepackage{graphicx}
+\usepackage{ae}
 
 
 \title{Documentation for Law Leecher}
-\subtitle{Documentation for version 1.0}
+\subtitle{Documentation for version 1.1}
 \author{Tobias Vogel}
-\date{05.03.2008}
+\date{\today}
 \begin{document}
 
 \maketitle
@@ -23,7 +24,7 @@ This documentation describes propose, installation and usage hints as well as im
 \tableofcontents
 
 \section{Propose}
-In the late year 2007, an assistant of Professor Goetz came up with the task to read out some laws from the Prelex\footnote{\url{http://ec.europa.eu/prelex/apcnet.cfm?CL=en}} website which deals with \textit{Monitoring of the decision-making process between institutions}. He needed some selected pieces of information from this website, or better: the database behind it, for example the legal basis, the primarily responsible or the steps the law took toward resolution until the current date. All these information had to be read out and put into a CSV file to process it further with some statistics program.
+In the late year 2007, an assistant of Professor Goetz came up with the task to read out some data from the Prelex\footnote{\url{http://ec.europa.eu/prelex/apcnet.cfm?CL=en}} database website which deals with \textit{Monitoring of the decision-making process between institutions}. In the database, meta information of the progress of European laws is stored. He needed some selected pieces of information, for example the legal basis, the primarily responsible or the steps the law took toward resolution. All this information had to be read out and put into a CSV file to process it further with a statistics program.
 
 I wrote a tool to fulfill that. I chose Ruby\footnote{\url{http://www.ruby-lang.org/}} because it provided native regex support and the Interactive Ruby console to ensure a fast progress in development. And to learn something about Ruby in practice.
 
@@ -95,9 +96,18 @@ Further, the Core handles the whole process of getting the information from the 
 
 
 \subsubsection{Class \texttt{Fetcher}}
-The Fetcher is the most important agent. It basically does two tasks. First, it finds out, which laws are to be examined, second, it grabs all required information for each law. The first is done within the \texttt{retrieveLawIDs()} method. The Fetcher sends a post request to the website for each type of law which is in question. Instead of asking for 20 laws (like one does manually in the browser), it asks for 10,000 to suppress pagination. The response is checked for validity (that there is really no pagination) and all law ids are crawled out and returned.
+The Fetcher is the most important agent. It basically does two tasks. First, it finds all law ids. Second, it grabs all required information for each law found in step one. The first is done within the \texttt{retrieveLawIDs()} method. The Fetcher sends a HTTP post request to the website. Instead of asking for 20 laws (like one does manually in the browser), it asks for 1,000,000 to suppress pagination\footnote{Currently, about 28,000 laws are contained in the data base}. The response is checked for validity (that there is really no pagination) and all law ids are crawled out and returned. Figure~\ref{Website} shows a screen shot of one of these law pages. The pieces of information with can be read out directly are marked. Additionally, there are some things which have to be calculated, first.
 
-The \texttt{retrieveLawContents()} method gets the required information for each law. It executes a get request for each law (encapsulated within the \texttt{fetch()} method to consider the redirect which is made by the server). The data of the entries are collected via regular expressions. Since Ruby does not support lookbehinds\footnote{In version 1.9, Ruby allows lookbehinds, but not of arbitrary length, so it's not much better and I sticked to version 1.8.6.}, there are more or less always two equal lines. Also, the law type is required. This information was available earlier, but got lost since all laws are treated equal.
+  \begin{figure}[ht]
+  \begin{center}
+  \includegraphics[width = \textwidth]{Website.png}
+  \caption{The website and the pieces of information contained within}
+  \label{Website}
+  \end{center}
+  \end{figure}
+
+
+The \texttt{retrieveLawContents()} method executes a HTTP get request for each law (encapsulated within the \texttt{fetch()} method to consider the redirect which is made by the server). The data of the entries are collected via regular expressions. Since Ruby does not support lookbehinds\footnote{In version 1.9, Ruby allows lookbehinds, but not of arbitrary length, so it's not much better and I sticked to version 1.8.6.}, there are more or less always two very similar adjacent lines of regular expressions in the code.
 
 Next to the information on the main area of the website there are process steps on the left. They record everything which happened to the law from the initial creation to the resolution or to discarding the law. Some steps may occur multiple times and there is no process step which occurs at every law. What's needed is the duration of each process step as difference to the first step measured in days. If there exists a process step named \textit{Adoption by Commission}, all earlier process steps for this law have to be ignored. If there is a process step named \textit{Signature by EP and Council}, additionally to the difference in days, the actual date of this step has to be saved. Process steps which occur multiple times in one law have to be saved in a way, that they are distinguishable. It is done by appending capital letters to the step names. Additionally, the duration for processing each law is temporarily stored. It is not saved in the output file but used for a short statistical calculation at the end of the program.
 
@@ -201,7 +211,7 @@ Third, I found wxRuby\footnote{\url{http://wxruby.rubyforge.org/wiki/wiki.pl}} w
 
 
 \subsection{Possible Adjustments and Future Work}
-There are some possibilities to improve the program. The approach to parse the website via regular expressions is a valid one. Perhaps the expressions can be optimized by making them shorter (esp. by lookbehinds, when they are working), using less regular expressions or by somehow preprocessing them, if this is possible. Further, leaving regular expressions out and use an XML parser instead, could reduce processing time. Also if the website changes, the regular expressions have to be touched.
+There are some possibilities to improve the program. The approach to parse the website via regular expressions is a valid one. Perhaps the expressions can be optimized by making them shorter (esp. by lookbehinds, when they are working), using less regular expressions or by somehow preprocessing them, if this is possible. Further, leaving regular expressions out and use an XML parser instead, could reduce processing time. However, the web site currently does not validate. Furthermore, if the website changes, the regular expressions have to be touched.
 
 Another approach could be to introduce multi threading into the program. The time, the program waits for the web server's answer could be used for scraping the contents of already-fetched pages. And maybe, also for multi processor systems, that would be advantageous.
 
