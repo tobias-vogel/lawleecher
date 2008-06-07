@@ -288,6 +288,16 @@ class Fetcher
         arrayEntry['Type'] = type
 
 
+        # this law seems to be empty, if the following entries are empty (upper left identifier is given, nevertheless)
+        if fieldsOfActivity == Configuration.missingEntry and
+           legalBasis == Configuration.missingEntry and
+           procedures == Configuration.missingEntry and
+           typeOfFile == Configuration.missingEntry and
+           primarilyResponsible == Configuration.missingEntry and
+           upperCenterIdentifier == Configuration.missingEntry and
+           shortDescription == Configuration.missingEntry
+          raise Exception.new('empty law')
+        end
 
 
         # find out the process duration information
@@ -402,6 +412,7 @@ class Fetcher
           puts 'Something went wrong during calculation of process step duration'
           puts ex.message
           puts ex.backtrace
+          thereHaveBeenErrors = true
         end
 
 
@@ -422,8 +433,10 @@ class Fetcher
         if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError  
           puts "Zeitüberschreitung bei Gesetz ##{lawID}. Starte dieses Gesetz nochmal von vorne."
           retry
+        elsif ex.message == 'empty law'
+          puts "Gesetz #{lawID} scheint leer zu sein. Dieses Gesetz wird ignoriert."
         else
-          puts "Es gab einen Fehler mit Gesetz ##{lawID}. Dieses Gesetz wird ignoriert."
+          puts "Es gab einen echten Fehler mit Gesetz ##{lawID}. Dieses Gesetz wird ignoriert."
           puts ex.message
           puts ex.class
           puts ex.backtrace
