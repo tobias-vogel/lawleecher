@@ -126,11 +126,18 @@ class Fetcher
 
         
 
-        # check, whether a data base error occured
+        # check, whether some specific errors occured
         if !content[/<H1>Database Error<\/H1>/].nil? then
           puts 'This law produced a data base error and thus, is ommitted.'
           next
         end
+        
+        if !content[/<H1>Unexpected Error<\/H1>/].nil? then
+          puts 'This law produced an "unexpected error" and thus, is ommitted.'
+          next
+        end
+        
+        
 
         
         
@@ -375,6 +382,11 @@ class Fetcher
             
             # this occurs only with law #115427
             parsedDate[:year] = 1986 if parsedDate[:year] == 986
+            
+            
+            # this occurs only with law #148799
+            parsedDate[:year] = 1982 if parsedDate[:year] == 1820
+            
             
             # if year is critical or (is it not, but) offset has been used in an
             # earlier iteration within this law

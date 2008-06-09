@@ -66,7 +66,6 @@ class Core
     
     callback(info)
     
-    puts "stimmt denn die zahl der gespeicherten gesetze? viele werden weggelassen; mit der zahl auf der webseite vergleichen"
   end
   
   # callback to the gui

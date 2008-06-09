@@ -12,7 +12,8 @@ core = Core.new
 core.addGuiPointer(GUI.new(core))
 fetcher = Fetcher.new(core)
 
-lawsToDebug = [193321, 192570, 194075]
+# insert law ids here
+lawsToDebug = []
 
 results, processStepNames = fetcher.retrieveLawContents(lawsToDebug)
 

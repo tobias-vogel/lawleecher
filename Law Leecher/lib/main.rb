@@ -32,6 +32,8 @@ require 'g_u_i.rb'
 require 'core.rb'
 
 puts 'Year filter is activated. In debug mode?' unless Configuration.year.empty?
+
+
 theCore = Core.new
 gui = GUI.new(theCore)
 theCore.addGuiPointer gui

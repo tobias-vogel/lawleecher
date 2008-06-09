@@ -26,7 +26,7 @@ class Configuration
 
   # year filter to apply (empty string for all years)
   @@year = ''
-  # @@year += '1970'      # to temporarily reduce the number of laws to crawl
+  #@@year += '1970'      # to temporarily reduce the number of laws to crawl
   def Configuration.year
     @@year
   end
