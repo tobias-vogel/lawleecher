@@ -1,0 +1,4 @@
+08.08.09: 2 stunden IDE installieren, Ruby installieren, GTK2 so halbwegs lauffähig machen
+09.08.09: 1 stunde gtk2 laufen lassenn (konfigurationsdatei beschummeln) und ide neustarten (vielleiht wars auch das)
+13.08.09: 30 min ruby threads lesen
+17.08.09: 30 min ruby threads einbauen
