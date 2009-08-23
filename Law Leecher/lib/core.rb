@@ -35,7 +35,7 @@ class Core
     @processStepNames = []
     
     # name of the export file
-    @filename = Configuration.defaultFilename
+    @filename = Configuration.filename
     
     # the law information (array of hash arrays)
     @laws = Array.new
@@ -71,7 +71,7 @@ class Core
   # callback to the gui
   def callback(bunchOfInformation)
     puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
-    @theGui.updateWidgets(bunchOfInformation)    
+    @theGui.updateWidgets(bunchOfInformation) if Configuration.guiEnabled
   end
   
   def readyToStart?(overWritingPermitted)

@@ -1,7 +1,7 @@
 # TODO lizenz einfügen
 class ParserThread
   def initialize lawID, lock, results
-    print "parser thread gestartet mit law ##{lawID}\n"
+#    print "parser thread gestartet mit law ##{lawID}\n"
     @lawID = lawID
     @lock = lock
     @results = results

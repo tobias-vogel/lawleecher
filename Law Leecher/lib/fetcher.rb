@@ -51,7 +51,6 @@ class Fetcher
 
     informUser({'status' => 'Frage alle Gesetze an. Das kann durchaus mal zwei Minuten oder mehr dauern.'})
     response = http.post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
-puts "antwort gekommen"
     content = response.body
 
 
@@ -96,7 +95,7 @@ puts "antwort gekommen"
   
   
   def retrieveLawContents(lawIDs)
-    lawIDs = lawIDs[0..49]
+    lawIDs = lawIDs[0..99]
     # array containing all law information
     results = Array.new
 
@@ -115,17 +114,29 @@ puts "antwort gekommen"
     # the array in which the threads (references) are stored
     threads = []
 
-    puts "ich selbst bin thread:" + Thread.list.inspect
+#    puts "ich selbst bin thread:" + Thread.list.inspect
 
     # large array which will contain all the parsed law details
     results = []
 
     vorher = Time.now
 
+#    erstesMal = true
+#    lieblingsthread = nil
+
     while !lawIDs.empty?
-      if (Thread.list.size - 1 < Configuration.numberOfParserThreads)
+      #print "laufende threads: #{Thread.list.size} von #{Configuration.numberOfParserThreads}\n"
+
+      # don't trust Thread.list.size (formerly used in:  if (Thread.list.size - 1 < Configuration.numberOfParserThreads)
+      # instead: iterate over the threads array and check, whether all are still alive
+      # and purge all dead threads
+      # afterwards, the number of still living threads makes up the number of actually alive threads
+      threads.map! {|thread| thread if thread.alive?}.compact!
+#      p "#{threads.size} threads laut threads.size"
+
+      if (threads.size < Configuration.numberOfParserThreads)
         # start a new thread
-        puts "starting a new thread because only #{Thread.list.size - 1} of #{Configuration.numberOfParserThreads} slots are used"
+#        puts "starting a new thread because only #{Thread.list.size - 1} of #{Configuration.numberOfParserThreads} slots are used"
         theLawToProcess = lawIDs.shift
         threads << Thread.new(theLawToProcess) { |lawID|
           parserThread = ParserThread.new lawID, lock, results
@@ -133,17 +144,33 @@ puts "antwort gekommen"
         }
       else
         # do not create a new thread now, instead wait a bit
-        puts "currently, all slots are full"
+#        puts "currently, all slots are full"
         #          puts Thread.list.inspect
         #    puts currentthreadcount if Thread.list.size == 1
         #Thread.pass
         #          puts ergebnis.inspect
-        sleep 1
+#        puts Thread.list.inspect
+        sleep 0.1
       end
+#      if erstesMal
+#        lieblingsthread = threads[0]
+#      end
+#      erstesMal = false;
+
+#      p "#{threads.size} threads gibt es laut threads.size"
+#      1000000.times do
+#        p lieblingsthread.alive?
+#      end
+
     end
+
+#    threads.each {|thread| print "#{thread.alive?} "}
+
 
     puts "no more laws left, waiting for threads to finish"
     threads.each {|thread| thread.join}
+
+
 
     nachher = Time.now
 

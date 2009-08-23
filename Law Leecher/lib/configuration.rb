@@ -22,54 +22,72 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-class Configuration
+class Configuration # and settings
 
   # year filter to apply (empty string for all years)
-  @@year = ''
-  @@year += '1975'      # to temporarily reduce the number of laws to crawl
   def Configuration.year
-    @@year
+    ''
+    '1975'      # to temporarily reduce the number of laws to crawl
   end
   
   # maximum hits per form submit (originally: 99, default: 20)
-  @@numberOfMaxHitsPerPage = 1000000
   def Configuration.numberOfMaxHitsPerPage
-    @@numberOfMaxHitsPerPage
+    1000000
   end
   
   # csv file column separator
-  @@separator = '#'
   def Configuration.separator
-    @@separator
+    '#'
   end
 
   # the text which is put if a key has no value on the website
-  @@missingEntry = '[fehlt]'
   def Configuration.missingEntry
-    @@missingEntry
+    '[fehlt]'
   end
   
   # categories to crawl
-  @@categories = ['Type', 'ID', 'Upper left identifier', 'Upper center identifier', 'Short description', 'Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible', 'DurationInformation']
   def Configuration.categories
-    @@categories
+    ['Type', 'ID', 'Upper left identifier', 'Upper center identifier', 'Short description', 'Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible', 'DurationInformation']
   end
   
-  # default file name of the export
-  @@defaultFilename = "#{Dir.pwd}/export.csv"
-  def Configuration.defaultFilename
-    @@defaultFilename
+  # file name of the export
+  @@filename = "#{Dir.pwd}/export.csv"
+  def Configuration.filename
+    @@filename
+  end
+  def Configuration.filename= filename
+    @@filename = filename
   end
   
   # version of the program
-  @@version = '1.2'
   def Configuration.version
-    @@version
+    '1.2'
   end
 
   # number of parser threads to use
-  @@numberOfParserThreads = 11
+  @@numberOfParserThreads = 10
   def Configuration.numberOfParserThreads
     @@numberOfParserThreads
+  end
+  def Configuration.numberOfParserThreads= numberOfParserThreads
+    @@numberOfParserThreads = numberOfParserThreads
+  end
+
+  # flag to overwrite the output file if it is existing already
+  @@overwritePermission = false
+  def Configuration.overwritePermission
+    @@overwritePermission
+  end
+  def Configuration.overwritePermission= overwritePermission
+    @@overwritePermission = overwritePermission
+  end
+
+  # flag whether or not to use the GUI
+  @@guiEnabled = true
+  def Configuration.guiEnabled
+    @@guiEnabled
+  end
+  def Configuration.guiEnabled= guiEnabled
+    @@guiEnabled = guiEnabled
   end
 end
