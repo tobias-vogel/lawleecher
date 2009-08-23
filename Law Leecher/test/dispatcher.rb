@@ -65,6 +65,7 @@ while !tasks.empty?
     puts Thread.list.inspect
 #    puts currentthreadcount if Thread.list.size == 1
     #Thread.pass
+    puts ergebnis.inspect
     sleep 1
   end
 end

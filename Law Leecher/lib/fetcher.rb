@@ -26,6 +26,8 @@ require 'net/http'
 require 'set'
 require 'configuration.rb'
 require 'date/format'
+require 'monitor'
+require 'parser_thread.rb'
 
 class Fetcher
   
@@ -47,9 +49,9 @@ class Fetcher
     http.read_timeout = 300
     http.open_timeout = 300
 
-    informUser({'status' => 'Frage alle Gesetze an. Das könnte einen Moment dauern.'})
+    informUser({'status' => 'Frage alle Gesetze an. Das kann durchaus mal zwei Minuten oder mehr dauern.'})
     response = http.post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
-
+puts "antwort gekommen"
     content = response.body
 
 
@@ -94,11 +96,12 @@ class Fetcher
   
   
   def retrieveLawContents(lawIDs)
+    lawIDs = lawIDs[0..49]
     # array containing all law information
     results = Array.new
 
     # counter for the current law (basically for informing the user)
-    currentLawCount = 1
+#    currentLawCount = 1
     
     # flag signalling whether there occured errors during processing
     thereHaveBeenErrors = false
@@ -106,17 +109,46 @@ class Fetcher
     # set of process step names (will be collected to be used for the csv file columns)
     processStepNames = Set.new
     
-    # for each lawID, submit HTTP GET request for fetching out the information of interest  
-    lawIDs.each { |lawID|
+    # the mutex which is needed to synchronicly save the dataset of details a parsed law into the result set
+    lock = Monitor.new
 
-      threads << Thread.new(lawID) do |url|
-        aThread = ParserThread.new
-        aThread.retrieveAndParseALaw lawID
-    
+    # the array in which the threads (references) are stored
+    threads = []
+
+    puts "ich selbst bin thread:" + Thread.list.inspect
+
+    # large array which will contain all the parsed law details
+    results = []
+
+    vorher = Time.now
+
+    while !lawIDs.empty?
+      if (Thread.list.size - 1 < Configuration.numberOfParserThreads)
+        # start a new thread
+        puts "starting a new thread because only #{Thread.list.size - 1} of #{Configuration.numberOfParserThreads} slots are used"
+        theLawToProcess = lawIDs.shift
+        threads << Thread.new(theLawToProcess) { |lawID|
+          parserThread = ParserThread.new lawID, lock, results
+          parserThread.retrieveAndParseALaw
+        }
+      else
+        # do not create a new thread now, instead wait a bit
+        puts "currently, all slots are full"
+        #          puts Thread.list.inspect
+        #    puts currentthreadcount if Thread.list.size == 1
+        #Thread.pass
+        #          puts ergebnis.inspect
+        sleep 1
       end
+    end
 
-      threads.each {|thread| thread.join}
-    }
+    puts "no more laws left, waiting for threads to finish"
+    threads.each {|thread| thread.join}
+
+    nachher = Time.now
+
+    puts "Dauer bei #{Configuration.numberOfParserThreads} threads: #{nachher - vorher}"
+
     return results, processStepNames.to_a, thereHaveBeenErrors
   end
 end

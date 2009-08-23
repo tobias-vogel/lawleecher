@@ -1,19 +1,26 @@
 # TODO lizenz einfügen
 class ParserThread
-  def initialize    
+  def initialize lawID, lock, results
+    print "parser thread gestartet mit law ##{lawID}\n"
+    @lawID = lawID
+    @lock = lock
+    @results = results
   end
 
-  def retrieveAndParseALaw lawID
+  def retrieveAndParseALaw
+
+    processStepNames = []
+
     begin # start try block
 
       # save this to calculate the average duration
       metaStartTime = Time.now
 
-      informUser({'status' => "Analysiere Gesetz ##{lawID}",
-          'progressBarText' => "#{currentLawCount}/#{lawIDs.size}",
-          'progressBarIncrement' => 1.0 / lawIDs.size})
+#      informUser({'status' => "Analysiere Gesetz ##{@lawID}",
+  #        'progressBarText' => "#{currentLawCount}/#{lawIDs.size}",
+#          'progressBarIncrement' => 1.0 / lawIDs.size})
 
-      response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{lawID}")
+      response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{@lawID}")
       content = response.body
 
       # prepare array containing all information for the current law
@@ -327,23 +334,25 @@ class ParserThread
       metaEndTime = Time.now
       arrayEntry['MetaDuration'] = metaEndTime - metaStartTime
 
-      arrayEntry['ID'] = lawID
+      arrayEntry['ID'] = @lawID
 
-      #add all fetched information (which is stored in arrayEntry) in the results array, finally
-      results << arrayEntry
 
-      currentLawCount += 1
+      @lock.synchronize {
+        #add all fetched information (which is stored in arrayEntry) in the results array, finally
+        @results << arrayEntry
 
+#        currentLawCount += 1
+      }
 
     rescue Exception => ex
 
       if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError
-        puts "Zeitüberschreitung bei Gesetz ##{lawID}. Starte dieses Gesetz nochmal von vorne."
+        puts "Zeitüberschreitung bei Gesetz ##{@lawID}. Starte dieses Gesetz nochmal von vorne."
         retry
       elsif ex.message == 'empty law'
-        puts "Gesetz #{lawID} scheint leer zu sein. Dieses Gesetz wird ignoriert."
+        puts "Gesetz #{@lawID} scheint leer zu sein. Dieses Gesetz wird ignoriert."
       else
-        puts "Es gab einen echten Fehler mit Gesetz ##{lawID}. Dieses Gesetz wird ignoriert."
+        puts "Es gab einen echten Fehler mit Gesetz ##{@lawID}. Dieses Gesetz wird ignoriert."
         puts ex.message
         puts ex.class
         puts ex.backtrace
@@ -354,7 +363,7 @@ class ParserThread
 
 
 
-private
+  private
 
   # removes whitespaces and HTML tags from a given string
   # maintains single word spacing blanks
@@ -388,8 +397,8 @@ private
 
     response = Net::HTTP.get_response(URI.parse(uri_str))
     case response
-      when Net::HTTPSuccess then response
-      when Net::HTTPRedirection then fetch(response['location'], limit - 1)
+    when Net::HTTPSuccess then response
+    when Net::HTTPRedirection then fetch(response['location'], limit - 1)
     else
       response.error!
     end

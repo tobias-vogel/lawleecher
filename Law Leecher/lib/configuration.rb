@@ -26,7 +26,7 @@ class Configuration
 
   # year filter to apply (empty string for all years)
   @@year = ''
-  #@@year += '1970'      # to temporarily reduce the number of laws to crawl
+  @@year += '1975'      # to temporarily reduce the number of laws to crawl
   def Configuration.year
     @@year
   end
@@ -62,8 +62,14 @@ class Configuration
   end
   
   # version of the program
-  @@version = '1.1'
+  @@version = '1.2'
   def Configuration.version
     @@version
+  end
+
+  # number of parser threads to use
+  @@numberOfParserThreads = 11
+  def Configuration.numberOfParserThreads
+    @@numberOfParserThreads
   end
 end
