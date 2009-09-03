@@ -29,10 +29,12 @@
 #   or which end after 23.12.2059 if they started between 1.1.1960 1.1.1070
 # - entries contain a # in the text
 
+#TODO für die doku einen screenshot machen und die teile bezeichnen
+
 require 'core.rb'
 
 puts 'Year filter is activated. In debug mode?' unless Configuration.year.empty?
-
+puts "separator falsch" unless Configuration.separator == '#'
 
 theCore = Core.new
 
@@ -41,12 +43,16 @@ theCore = Core.new
 if (ARGV.member? "--nogui")
   Configuration.guiEnabled = false
 
-  numberOfThreadsFromParams = ARGV.map {|param| param if param[/--numberofthreads=.+/]}.compact.first.gsub(/--numberofthreads=/, '').to_i
-  p numberOfThreadsFromParams
-  Configuration.numberOfParserThreads = numberOfThreadsFromParams unless numberOfThreadsFromParams.nil? or numberOfThreadsFromParams < 0
+  numberOfThreadsFromParams = ARGV.map {|param| param if param[/--numberofthreads=.+/]}.compact
+#  p numberOfThreadsFromParams
+  numberOfThreadsFromParams = numberOfThreadsFromParams.empty? ? -1 : numberOfThreadsFromParams.first.gsub(/--numberofthreads=/, '').to_i
+#    p numberOfThreadsFromParams
+  Configuration.numberOfParserThreads = numberOfThreadsFromParams unless numberOfThreadsFromParams < 0
+#  p Configuration.numberOfParserThreads
 
-  filenameFromParams = ARGV.map {|param| param if param[/--filename=.+/]}.compact.first.gsub(/--filename=/, '')
-  Configuration.filename = filenameFromParams unless filenameFromParams.nil?
+  filenameFromParams = ARGV.map {|param| param if param[/--filename=.+/]}.compact
+#  p filenameFromParams
+  Configuration.filename = filenameFromParams.compact.first.gsub(/--filename=/, '') unless filenameFromParams.empty?
 
   Configuration.overwritePermission = ARGV.member? '--overwriteexistingfile'
 

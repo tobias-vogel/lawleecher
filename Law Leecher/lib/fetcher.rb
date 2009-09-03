@@ -95,7 +95,9 @@ class Fetcher
   
   
   def retrieveLawContents(lawIDs)
-    lawIDs = lawIDs[0..99]
+    lawIDs = lawIDs[0..0]#99]
+    lawIDs = [187990]
+    lawIDs = [100979]
     # array containing all law information
     results = Array.new
 

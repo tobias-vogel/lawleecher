@@ -37,7 +37,7 @@ class Configuration # and settings
   
   # csv file column separator
   def Configuration.separator
-    '#'
+    ';'#'#'
   end
 
   # the text which is put if a key has no value on the website
