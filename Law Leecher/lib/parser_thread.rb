@@ -16,9 +16,9 @@ class ParserThread
 
 
   def retrieveAndParseALaw
-p @lawID
+    p @lawID
     # to save all process steps on the left
-    processStepNames = []
+    #    processStepNames = []
 
     begin # start try block
 
@@ -32,7 +32,7 @@ p @lawID
       response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{@lawID}")
       @content = response.body
 
-      p @content[-100..-1]
+      @content[-100..-1]
       # prepare array containing all information for the current law
       arrayEntry = Hash.new
 
@@ -59,21 +59,26 @@ p @lawID
 
 
       # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
-     
-      arrayEntry['Upper left identifier'] = parseUpperleftIdentifier
-      arrayEntry['Upper center identifier'] = parseUpperCenterIdentifier
-      arrayEntry['Short description'] = parseShortDescription
-      arrayEntry['Fields of activity'] = parseFieldsOfActivity
-      arrayEntry['Legal basis'] = parseLegalBasis
-      arrayEntry['Procedures'] = parseProcedures
-      arrayEntry['Type of File'] = parseTypeOfFile
-      arrayEntry['Primarily Responsible'] = parsePrimarilyResponsible
-      arrayEntry['Type'] = parseLawType
+
+      p "hier"
+
+
+      arrayEntry['bluebox.UpperLeftIdentifier'] = parseSimple(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, '.*?(?=<\/font><\/font><\/b>\s*<\/td>)')
+      arrayEntry['bluebox.UpperCenterIdentifier'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, '.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)')
+      arrayEntry['bluebox.ShortDescription'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/, '.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)')
+      arrayEntry['greenbox.FieldsOfActivity'] = parseSimple(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*/, '.*?(?=<\/tr>)')
+      arrayEntry['greenbox.LegalBasis'] = parseSimple(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '.*?(?=<\/tr>)')
+      arrayEntry['greenbox.Procedures'] = parseSimple(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '.*?(?=<\/tr>)')
+      arrayEntry['greenbox.TypeOfFile'] = parseSimple(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '.*?(?=<\/tr>)')
+      arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '.*?(?=<\/tr>)')
+      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>/, '(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)')
+
       if (lastBoxExistsAndIsRelevant?)
-        arrayEntry['Last Box Type of File'] = parseLastBoxTypeOfFile
+        arrayEntry['lastBox.TypeOfFile'] = parseLastBoxTypeOfFile
       end
-p "hallo?"
-puts "ergebnis: " + arrayEntry['Last Box Type of File']
+      p arrayEntry.inspect
+      p "hallo?"
+      puts "ergebnis: " + arrayEntry['Last Box Type of File']
 
 
       # this law seems to be empty, if the following entries are empty (upper left identifier is given, nevertheless)
@@ -120,7 +125,7 @@ puts "ergebnis: " + arrayEntry['Last Box Type of File']
         # if not, the appropriate hash entry has to be created and set to Configuration.missingEntry
         adoptionByCommissionFoundForThisLaw = false
 
-#        p processSteps.inspect
+        #        p processSteps.inspect
         processSteps.each do |step|
 
           stepName, timeStamp = step.split(/<\/a>\s*<br>&nbsp;&nbsp;/)
@@ -158,7 +163,7 @@ puts "ergebnis: " + arrayEntry['Last Box Type of File']
             adoptionByCommissionFoundForThisLaw = true
           end
 
-#          p timeStamp
+          #          p timeStamp
           # second (parse date)
           #          parsedDate = Date._parse timeStamp
 
@@ -217,7 +222,7 @@ puts "ergebnis: " + arrayEntry['Last Box Type of File']
 
       arrayEntry['ID'] = @lawID
 
-#      p arrayEntry.inspect
+      #      p arrayEntry.inspect
 
       @lock.synchronize {
         #add all fetched information (which is stored in arrayEntry) in the results array, finally
@@ -286,121 +291,6 @@ puts "ergebnis: " + arrayEntry['Last Box Type of File']
     end
   end
 
-
-  def parseUpperleftIdentifier
-    # find out the value for the upper left identifier
-    begin
-      upperLeftIdentifier = @preamble[/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?(?=<\/font><\/font><\/b>\s*<\/td>)/m]
-      upperLeftIdentifier.gsub!(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/m, '')
-      upperLeftIdentifier = clean(upperLeftIdentifier)
-      raise if upperLeftIdentifier.empty?
-    rescue
-      #this law does not have data for the upper left identifier
-      upperLeftIdentifier = Configuration.missingEntry
-    end
-  end
-  
-  def parseUpperCenterIdentifier
-    # find out the value for the upper center identifier
-    begin
-      upperCenterIdentifier = @preamble[/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)/m]
-      upperCenterIdentifier.gsub!(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/m, '')
-      upperCenterIdentifier = clean(upperCenterIdentifier)
-      raise if upperCenterIdentifier.empty?
-    rescue
-      #this law does not have data for the upper center identifier
-      upperCenterIdentifier = Configuration.missingEntry
-    end
-  end
-
-  def parseShortDescription
-    # find out the value for the short description
-    begin
-      shortDescription = @preamble[/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)/m]
-      shortDescription.gsub!(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/m, '')
-      shortDescription= clean(shortDescription)
-      raise if shortDescription.empty?
-    rescue
-      #this law does not have data for the short description
-      shortDescription = Configuration.missingEntry
-    end
-  end
-
-  def parseFieldsOfActivity
-    # find out the value for "fields of activity"
-    begin
-      fieldsOfActivity = @content[/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*.*?(?=<\/tr>)/m]
-      fieldsOfActivity.gsub!(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
-      fieldsOfActivity = clean(fieldsOfActivity)
-      raise if fieldsOfActivity.empty?
-    rescue
-      #this law does not have "fields of activity" data
-      fieldsOfActivity = Configuration.missingEntry
-    end
-  end
-
-  def parseLegalBasis
-    # find out the value for "legal basis"
-    begin
-      legalBasis = @content[/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-      legalBasis.gsub!(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
-      legalBasis = clean(legalBasis)
-      raise if legalBasis.empty?
-    rescue
-      # this law does not have "legal basis" data
-      legalBasis = Configuration.missingEntry
-    end
-  end
-
-  def parseProcedures
-    # find out the value for "procedures"
-    begin
-      procedures = @content[/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-      procedures.gsub!(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '')
-      # convert all \t resp. \r\n into blanks
-      procedures = clean(procedures)
-      # if "procedures" contains a value for commission and council, remove the commission value
-      procedures.gsub!(/.*Commission ?: ?.*?(?=Council ?: ?)/, '') if procedures[/.*Commission.*Council.*/] != nil
-      raise if procedures.empty?
-    rescue
-      # this law does not have "procedures" data
-      procedures = Configuration.missingEntry
-    end
-  end
-
-
-  def parseTypeOfFile
-    # find out the value for "type of file"
-    begin
-      typeOfFile = @content[/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>.*?(?=<\/tr>)/m]
-      typeOfFile.gsub!(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '')
-      # convert all \t resp. \r\n into blanks
-      typeOfFile = clean(typeOfFile)
-      #if "type of file" contains a value for commission and council, remove the commission value
-      typeOfFile.gsub!(/.*Commission ?: ?.*?(?=Council ?: ?)/, '') if typeOfFile[/.*Commission.*Council.*/] != nil
-      raise if typeOfFile.empty?
-    rescue
-      # this law does not have "type of file" data
-      typeOfFile = Configuration.missingEntry
-    end
-
-  end
-
-
-  def parsePrimarilyResponsible
-    # find out the value for "primarily responsible"
-    begin
-      primarilyResponsible = @content[/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*?(?=<\/tr>)/m]
-      primarilyResponsible.gsub!(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '')
-      # convert all \t resp. \r\n into blanks
-      primarilyResponsible = clean(primarilyResponsible)
-      raise if primarilyResponsible.empty?
-    rescue
-      # this law does not have "primarily responsible" data
-      primarilyResponsible = Configuration.missingEntry
-    end
-  end
-
   def parseLawType
     # find out the law type
     begin
@@ -411,15 +301,43 @@ puts "ergebnis: " + arrayEntry['Last Box Type of File']
       # this law does not have "type" data
       type = Configuration.missingEntry
     end
+    return type
   end
 
   def lastBoxExistsAndIsRelevant?
-      @content[/<table BORDER=0 CELLSPACING=0 WIDTH="100%" BGCOLOR="#\w{6}">\s*<tr>\s*<td width="1%" BGCOLOR="#\w{6}">&nbsp;<\/td>\s*<td WIDTH="20%" BGCOLOR="#\w{6}">\s*<font face="Arial">\s*<font size=-2>\s*<B>24-10-1995<\/B>\s*<\/font>\s*<\/font>\s*<\/td>\s*<td ALIGN=CENTER WIDTH="69%" BGCOLOR="#\w{6}">\s*<font face="Arial">\s*<font size=-2>\s*<B>Signature by EP and Council<\/B>\s*<\/font>\s*<\/font>/m]
+    @content[/<table BORDER=0 CELLSPACING=0 WIDTH="100%" BGCOLOR="#\w{6}">\s*<tr>\s*<td width="1%" BGCOLOR="#\w{6}">&nbsp;<\/td>\s*<td WIDTH="20%" BGCOLOR="#\w{6}">\s*<font face="Arial">\s*<font size=-2>\s*<B>24-10-1995<\/B>\s*<\/font>\s*<\/font>\s*<\/td>\s*<td ALIGN=CENTER WIDTH="69%" BGCOLOR="#\w{6}">\s*<font face="Arial">\s*<font size=-2>\s*<B>Signature by EP and Council<\/B>\s*<\/font>\s*<\/font>/m]
   end
 
 
+  #   a general method to extract pieces of a long string (simulating multilength look-behinds)
+  #     extracts a substring out of a string
+  #     result =     noise     substring   noise
+  #              ------------- --------- ---------
+  #              beforepattern    .*     (?=noise)
+  #                            -------------------
+  #                               behindpattern
+  #
+  #    to get the result, the following happens
+  #    1. beforepattern + behindpattern is extracted from the string
+  #    2. beforepattern is deleted
+  #    3. since behindpattern consists of .* and some noise, which is not selected from the string, the remaining string is the result
+  #
+  #    beforepattern is a regexp object
+  #    behindpattern is a string
+  def parseSimple beforePattern, behindPattern
+    begin
+      result = @content[Regexp.new(beforePattern.source + behindPattern, Regexp::MULTILINE)]
+      result.gsub! beforePattern, ''
+      result = clean(result)
+      raise if result.empty?
+    rescue
+      result = Configuration.missingEntry
+    end
+    return result
+  end
+
   def parseLastBoxTypeOfFile
-     # find out the value for "type of file in the last box"
+    # find out the value for "type of file in the last box"
     begin
       stringStart = /<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/m
       p "hier"
@@ -428,10 +346,10 @@ puts "ergebnis: " + arrayEntry['Last Box Type of File']
       puts x.inspect
       puts x.class
       p @content[-100..-1]
-#      typeOfFileInTheLastBox = @content[rml(stringStart, ".*(?=<\/font><\/font><\/td>\s*<\/tr>)")]
-p @content[/<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*(?=<\/font><\/font><\/td>\s*)/]
-p @content[/<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*(?=<\/font><\/font><\/td>\s*<\/tr>)/m]
-p "piep"
+      #      typeOfFileInTheLastBox = @content[rml(stringStart, ".*(?=<\/font><\/font><\/td>\s*<\/tr>)")]
+      p @content[/<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*(?=<\/font><\/font><\/td>\s*)/]
+      p @content[/<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*(?=<\/font><\/font><\/td>\s*<\/tr>)/m]
+      p "piep"
       p "inhalt: #{typeOfFileInTheLastBox}"
       typeOfFileInTheLastBox = typeOfFileInTheLastBox.gsub! stringStart, ''
       # convert all \t resp. \r\n into blanks
@@ -446,13 +364,13 @@ p "piep"
   end
 
   def rml regexp, string
-#    begin
-#    r =
-      Regexp.new(regexp.source + string, Regexp::MULTILINE)
-#    puts r.class
-#    rescue
-#      p "catchblock"
-#    end
-#return r
+    #    begin
+    #    r =
+    Regexp.new(regexp.source + string, Regexp::MULTILINE)
+    #    puts r.class
+    #    rescue
+    #      p "catchblock"
+    #    end
+    #return r
   end
 end
