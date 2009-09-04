@@ -63,22 +63,25 @@ class ParserThread
       p "hier"
 
 
-      arrayEntry['bluebox.UpperLeftIdentifier'] = parseSimple(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, '.*?(?=<\/font><\/font><\/b>\s*<\/td>)')
-      arrayEntry['bluebox.UpperCenterIdentifier'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, '.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)')
-      arrayEntry['bluebox.ShortDescription'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/, '.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)')
-      arrayEntry['greenbox.FieldsOfActivity'] = parseSimple(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*/, '.*?(?=<\/tr>)')
-      arrayEntry['greenbox.LegalBasis'] = parseSimple(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '.*?(?=<\/tr>)')
-      arrayEntry['greenbox.Procedures'] = parseSimple(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, '.*?(?=<\/tr>)')
-      arrayEntry['greenbox.TypeOfFile'] = parseSimple(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, '.*?(?=<\/tr>)')
-      arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, '.*?(?=<\/tr>)')
-      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>/, '(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)')
+      arrayEntry['bluebox.UpperLeftIdentifier'] = parseSimple(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>)/)
+      arrayEntry['bluebox.UpperCenterIdentifier'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)/)
+      arrayEntry['bluebox.ShortDescription'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/, /.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)/)
+
+      arrayEntry['greenbox.FieldsOfActivity'] = parseSimple(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*/, /.*?(?=<\/tr>)/)
+      arrayEntry['greenbox.LegalBasis'] = parseSimple(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/)
+      arrayEntry['greenbox.Procedures'] = parseSimple(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/)
+      arrayEntry['greenbox.TypeOfFile'] = parseSimple(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/)
+
+      arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/tr>)/)
+
+      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>/, /(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/)
 
       if (lastBoxExistsAndIsRelevant?)
         arrayEntry['lastBox.TypeOfFile'] = parseLastBoxTypeOfFile
       end
-      p arrayEntry.inspect
-      p "hallo?"
-      puts "ergebnis: " + arrayEntry['Last Box Type of File']
+#      p arrayEntry.inspect
+#      p "hallo?"
+#      puts "ergebnis: " + arrayEntry['Last Box Type of File']
 
 
       # this law seems to be empty, if the following entries are empty (upper left identifier is given, nevertheless)
@@ -92,6 +95,30 @@ class ParserThread
         raise Exception.new('empty law')
       end
 
+
+      # timeline abarbeiten
+      arrayEntry['timeline'] = []
+      # separate the tables, each table is an entry in the timeline
+      allTables = @content[/<table BORDER=0 CELLSPACING=0 COLS=2 WIDTH="100%" BGCOLOR="#EEEEEE" >.*<\/td>\s*<\/tr>\s*<\/table>\s*<!-- BOTTOM NAVIGATION BAR -->/m]
+      allTables = allTables.split /(?=<table BORDER=0 CELLSPACING=0 WIDTH="100%" BGCOLOR="#.{6}")/
+
+      # remove the first one, because it is the green box
+      allTables.shift
+
+      allTables.each { |table|
+        # separate the table into table rows (<tr>)
+        rows = table.split /(?=<tr>)/
+
+        # first row always contains junk
+        rows.shift
+
+        
+#        timestamp = table[/\d\d-\d\d-\d\d\d\d/]
+#        title = table[/\d\d-\d\d/]
+        rows.each {|x| p x}
+      }
+
+       p allTables.first
 
       # find out the process duration information
       # create a hash with a time object as key and the name of the process step as value
@@ -323,10 +350,10 @@ class ParserThread
   #    3. since behindpattern consists of .* and some noise, which is not selected from the string, the remaining string is the result
   #
   #    beforepattern is a regexp object
-  #    behindpattern is a string
+  #    behindpattern is a regexp object
   def parseSimple beforePattern, behindPattern
     begin
-      result = @content[Regexp.new(beforePattern.source + behindPattern, Regexp::MULTILINE)]
+      result = @content[Regexp.new(beforePattern.source + behindPattern.source, Regexp::MULTILINE)]
       result.gsub! beforePattern, ''
       result = clean(result)
       raise if result.empty?
