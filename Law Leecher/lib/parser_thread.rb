@@ -32,9 +32,9 @@ class ParserThread
       response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{@lawID}")
       @content = response.body
 
-      @content[-100..-1]
+      #@content[-100..-1]
       # prepare array containing all information for the current law
-      arrayEntry = Hash.new
+      arrayEntry = {}
 
 
 
@@ -55,45 +55,42 @@ class ParserThread
       # now, find out many different pieces of information
 
       # the preamble has no key words, so it will be extracted first as whole (for safety) and then is divided into the three parts
-      @preamble = @content[/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>.*?<\/font><\/font>\s*<\/td>\s*<\/tr>/m]
+      #      @preamble = @content[/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>.*?<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>.*?<\/font><\/font>\s*<\/td>\s*<\/tr>/m]
 
 
       # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
 
-      p "hier"
+      arrayEntry['bluebox.UpperLeftIdentifier'] = parseSimple(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>)/, @content)
+      arrayEntry['bluebox.UpperCenterIdentifier'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)/, @content)
+      arrayEntry['bluebox.ShortDescription'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/, /.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)/, @content)
 
+      arrayEntry['greenbox.FieldsOfActivity'] = parseSimple(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*/, /.*?(?=<\/tr>)/, @content)
+      arrayEntry['greenbox.LegalBasis'] = parseSimple(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
+      arrayEntry['greenbox.Procedures'] = parseSimple(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
+      arrayEntry['greenbox.TypeOfFile'] = parseSimple(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
 
-      arrayEntry['bluebox.UpperLeftIdentifier'] = parseSimple(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>)/)
-      arrayEntry['bluebox.UpperCenterIdentifier'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)/)
-      arrayEntry['bluebox.ShortDescription'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/, /.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)/)
+      arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/tr>)/, @content)
 
-      arrayEntry['greenbox.FieldsOfActivity'] = parseSimple(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*/, /.*?(?=<\/tr>)/)
-      arrayEntry['greenbox.LegalBasis'] = parseSimple(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/)
-      arrayEntry['greenbox.Procedures'] = parseSimple(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/)
-      arrayEntry['greenbox.TypeOfFile'] = parseSimple(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/)
-
-      arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/tr>)/)
-
-      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>/, /(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/)
+      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>/, /(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/, @content)
 
       if (lastBoxExistsAndIsRelevant?)
         arrayEntry['lastBox.TypeOfFile'] = parseLastBoxTypeOfFile
       end
-#      p arrayEntry.inspect
-#      p "hallo?"
-#      puts "ergebnis: " + arrayEntry['Last Box Type of File']
+      #      p arrayEntry.inspect
+      #      p "hallo?"
+      #      puts "ergebnis: " + arrayEntry['Last Box Type of File']
 
 
-      # this law seems to be empty, if the following entries are empty (upper left identifier is given, nevertheless)
-      if arrayEntry['Fields of activity'] == Configuration.missingEntry and
-          arrayEntry['Legal basis'] == Configuration.missingEntry and
-          arrayEntry['Procedures'] == Configuration.missingEntry and
-          arrayEntry['Type of File'] == Configuration.missingEntry and
-          arrayEntry['Primarily Responsible'] == Configuration.missingEntry and
-          arrayEntry['Upper center identifier'] == Configuration.missingEntry and
-          arrayEntry['Short description'] == Configuration.missingEntry
-        raise Exception.new('empty law')
-      end
+      #      # this law seems to be empty, if the following entries are empty (upper left identifier is given, nevertheless)
+      #      if arrayEntry['Fields of activity'] == Configuration.missingEntry and
+      #          arrayEntry['Legal basis'] == Configuration.missingEntry and
+      #          arrayEntry['Procedures'] == Configuration.missingEntry and
+      #          arrayEntry['Type of File'] == Configuration.missingEntry and
+      #          arrayEntry['Primarily Responsible'] == Configuration.missingEntry and
+      #          arrayEntry['Upper center identifier'] == Configuration.missingEntry and
+      #          arrayEntry['Short description'] == Configuration.missingEntry
+      #        raise Exception.new('empty law')
+      #      end
 
 
       # timeline abarbeiten
@@ -102,23 +99,47 @@ class ParserThread
       allTables = @content[/<table BORDER=0 CELLSPACING=0 COLS=2 WIDTH="100%" BGCOLOR="#EEEEEE" >.*<\/td>\s*<\/tr>\s*<\/table>\s*<!-- BOTTOM NAVIGATION BAR -->/m]
       allTables = allTables.split /(?=<table BORDER=0 CELLSPACING=0 WIDTH="100%" BGCOLOR="#.{6}")/
 
+      #      p allTables.size
+
       # remove the first one, because it is the green box
       allTables.shift
 
+      # retrieve data from each table
       allTables.each { |table|
+        #table = allTables.first
         # separate the table into table rows (<tr>)
         rows = table.split /(?=<tr>)/
 
-        # first row always contains junk
+        # first row always contains some noise (stuff between <table> and the first <tr>)
         rows.shift
 
-        
-#        timestamp = table[/\d\d-\d\d-\d\d\d\d/]
-#        title = table[/\d\d-\d\d/]
-        rows.each {|x| p x}
+        # the first <tr>... contains the date and the title of the timeline step
+        firstRow = rows.shift
+        timestamp = firstRow[/\d\d-\d\d-\d\d\d\d(?=<\/B>\s*<\/font>)/]
+        title = parseSimple(/<td ALIGN=CENTER WIDTH=\"\d+%\" BGCOLOR=\"#.{6}\">\s*<font face=\"Arial\">\s*<font size=-2>\s*<B>/, /.*(?=<\/B>\s*<\/font>\s*<\/font>\s*<\/td>\s*<\/tr>\s*)/, firstRow)
+
+
+        decision = Configuration.missingEntry
+        unless rows.empty?
+          # the second <tr>... contains "decision" or "decision mode" or none of both
+          secondRow = rows.shift
+          secondRow.gsub! /<tr>\s*<td width=\"3\">&nbsp;<\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, ''
+          decision = secondRow[/^Decision (mode)?:/]
+          if decision.nil?
+            decision = Configuration.missingEntry
+          else
+            decision = parseSimple(/<font size=-2>/, /.*<\/font><\/font><\/td>\s*<\/tr>/, secondRow)
+          end
+        end
+
+        arrayEntry['timeline'] << {'titleOfStep' => title, 'timestamp' => timestamp, 'decision' => decision}
       }
 
-       p allTables.first
+
+=begin
+
+          dsada
+
 
       # find out the process duration information
       # create a hash with a time object as key and the name of the process step as value
@@ -242,12 +263,15 @@ class ParserThread
         thereHaveBeenErrors = true
       end
 
-
+=end
 
       #      metaEndTime = Time.now
       #      arrayEntry['MetaDuration'] = metaEndTime - metaStartTime
 
       arrayEntry['ID'] = @lawID
+
+      arrayEntry.each {|key, value| puts "#{key} -> #{value}"}
+      
 
       #      p arrayEntry.inspect
 
@@ -303,7 +327,7 @@ class ParserThread
   end
 
 
-  
+
   # fetches HTTP requests which use redirects
   def fetch(uri_str, limit = 10)
     # You should choose better exception.
@@ -337,23 +361,26 @@ class ParserThread
 
 
   #   a general method to extract pieces of a long string (simulating multilength look-behinds)
-  #     extracts a substring out of a string
-  #     result =     noise     substring   noise
-  #              ------------- --------- ---------
-  #              beforepattern    .*     (?=noise)
-  #                            -------------------
-  #                               behindpattern
+  #     extracts a substring out of a given string
+  #     i.e.: result = string[/(?<=noise1)substring(?=noise2)/m]
+  #
+  #     where string is given
+  #     noise1 is beforepattern
+  #     substring and noise2 is behindpattern (should include the (?=...))
+  #     returns result (the isolated substring)
   #
   #    to get the result, the following happens
-  #    1. beforepattern + behindpattern is extracted from the string
+  #    1. beforepattern + behindpattern is extracted from string, behindpattern may contain a lookahead and thus, this noise is not selected
   #    2. beforepattern is deleted
   #    3. since behindpattern consists of .* and some noise, which is not selected from the string, the remaining string is the result
   #
   #    beforepattern is a regexp object
   #    behindpattern is a regexp object
-  def parseSimple beforePattern, behindPattern
+  #    string is a string
+  def parseSimple beforePattern, behindPattern, string
     begin
-      result = @content[Regexp.new(beforePattern.source + behindPattern.source, Regexp::MULTILINE)]
+      #      p "neu in parsesimple\n"
+      result = string[Regexp.new(beforePattern.source + behindPattern.source, Regexp::MULTILINE)]
       result.gsub! beforePattern, ''
       result = clean(result)
       raise if result.empty?
