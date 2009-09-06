@@ -64,18 +64,17 @@ class ParserThread
       arrayEntry['bluebox.UpperCenterIdentifier'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)/, @content)
       arrayEntry['bluebox.ShortDescription'] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/, /.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)/, @content)
 
+      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, /(CNS|COD|SYN|AVC|ACC|PRT|CNB|CNC)(?=<\/font>\s*<\/font>)/, @content)
+
       arrayEntry['greenbox.FieldsOfActivity'] = parseSimple(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*/, /.*?(?=<\/tr>)/, @content)
       arrayEntry['greenbox.LegalBasis'] = parseSimple(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
       arrayEntry['greenbox.Procedures'] = parseSimple(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
       arrayEntry['greenbox.TypeOfFile'] = parseSimple(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
 
-      arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/tr>)/, @content)
 
-      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, /(CNS|COD|SYN|AVC|ACC|PRT|CNB|CNC)(?=<\/font>\s*<\/font>)/, @content)
-
-      if (lastBoxExistsAndIsRelevant?)
-        arrayEntry['lastBox.TypeOfFile'] = parseLastBoxTypeOfFile
-      end
+      #      if (lastBoxExistsAndIsRelevant?)
+      #        arrayEntry['lastBox.TypeOfFile'] = parseLastBoxTypeOfFile
+      #      end
       #      p arrayEntry.inspect
       #      p "hallo?"
       #      puts "ergebnis: " + arrayEntry['Last Box Type of File']
@@ -100,10 +99,19 @@ class ParserThread
       # remove the first one (green table)
       allTables.shift
 
+
+
       arrayEntry['timeline'] = processTimeline allTables
+
+
+      # first box items (whatever is in there)
+      arrayEntry['firstbox'] = processFirstBox allTables.first
+      #arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/tr>)/, @content)
+
 
       # last box items (if available)
       arrayEntry['lastbox.Documents'], arrayEntry['lastbox.Procedures'], arrayEntry['lastbox.TypeOfFile'], arrayEntry['lastbox.NumeroCelex'] = processLastBox allTables.last
+
 
 
       # OJ Conseil
@@ -118,12 +126,11 @@ class ParserThread
       arrayEntry['ojConceil'] = ojConseil
       
 
+ 
+
     end
 
 =begin
-
-          dsada
-
 
       # find out the process duration information
       # create a hash with a time object as key and the name of the process step as value
@@ -254,7 +261,7 @@ class ParserThread
 
     arrayEntry['ID'] = @lawID
 
-     arrayEntry.each {|key, value| puts "#{key} -> #{value}"}
+    arrayEntry.each {|key, value| puts "#{key} -> #{value}"}
 
 
     #      p arrayEntry.inspect
@@ -281,198 +288,239 @@ class ParserThread
       thereHaveBeenErrors = true
     end
   end #of exception handling
-end
 
 
 
-private
+  private
 
-def processTimeline allTables
-  # timeline abarbeiten
-  timeline = []
+  def processTimeline allTables
+    # timeline abarbeiten
+    timeline = []
 
-  # retrieve data from each table
-  allTables.each { |table|
-    #table = allTables.first
-    # separate the table into table rows (<tr>)
-    rows = table.split(/(?=<tr>)/)
+    # retrieve data from each table
+    allTables.each { |table|
+      #table = allTables.first
+      # separate the table into table rows (<tr>)
+      rows = table.split(/(?=<tr>)/)
 
-    # remove the stuff before the first <tr>
+      # remove the stuff before the first <tr>
+      rows.shift
+
+      # the first <tr>... contains the date and the title of the timeline step
+      firstRow = rows.shift
+      timestamp = firstRow[/\d\d-\d\d-\d\d\d\d(?=<\/B>\s*<\/font>)/]
+      title = parseSimple(/<td ALIGN=CENTER WIDTH=\"\d+%\" BGCOLOR=\"#.{6}\">\s*<font face=\"Arial\">\s*<font size=-2>\s*<B>/, /.*(?=<\/B>\s*<\/font>\s*<\/font>\s*<\/td>\s*<\/tr>\s*)/, firstRow)
+
+
+      decision = Configuration.missingEntry
+      unless rows.empty?
+        # the second <tr>... contains "decision" or "decision mode" or none of both
+        secondRow = rows.shift
+        secondRow.gsub! /<tr>\s*<td width=\"3\">&nbsp;<\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, ''
+        decision = secondRow[/^Decision (mode)?:/]
+        if decision.nil?
+          decision = Configuration.missingEntry
+        else
+          decision = parseSimple(/<font size=-2>/, /.*<\/font><\/font><\/td>\s*<\/tr>/, secondRow)
+        end
+      end
+
+      timeline << {'titleOfStep' => title, 'timestamp' => timestamp, 'decision' => decision}
+    }
+
+    return timeline
+  end
+
+  def processLastBox lastTable
+    rows = lastTable.split(/(?=<tr>)/)
+    # remove the stuff before the first <tr>, immediately
     rows.shift
 
-    # the first <tr>... contains the date and the title of the timeline step
-    firstRow = rows.shift
-    timestamp = firstRow[/\d\d-\d\d-\d\d\d\d(?=<\/B>\s*<\/font>)/]
-    title = parseSimple(/<td ALIGN=CENTER WIDTH=\"\d+%\" BGCOLOR=\"#.{6}\">\s*<font face=\"Arial\">\s*<font size=-2>\s*<B>/, /.*(?=<\/B>\s*<\/font>\s*<\/font>\s*<\/td>\s*<\/tr>\s*)/, firstRow)
+    # there can be several documents, thus: split it
+    documents = rows[1].split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
+    documents.shift # remove junk here
+    documents.collect! {|document| clean(document[/.*(?=<\/font>.*)/])}
+    documents = documents.join ', '
+
+    procedures = parseSimple(/Procedures:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[2])
+
+    typeOfFile = parseSimple(/Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[3])
+
+    numeroCelex = parseSimple(/'\)\">\s*<font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font>\s*<\/a>)/, rows[4])
 
 
-    decision = Configuration.missingEntry
-    unless rows.empty?
-      # the second <tr>... contains "decision" or "decision mode" or none of both
-      secondRow = rows.shift
-      secondRow.gsub! /<tr>\s*<td width=\"3\">&nbsp;<\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, ''
-      decision = secondRow[/^Decision (mode)?:/]
-      if decision.nil?
-        decision = Configuration.missingEntry
-      else
-        decision = parseSimple(/<font size=-2>/, /.*<\/font><\/font><\/td>\s*<\/tr>/, secondRow)
-      end
+    #  ignoreLastBox = lastTable[/Documents.*Procedures.*Type of file.*NUMERO CELEX/m].nil?
+    #  arrayEntry['lastbox.Procedures'] = ignoreLastBox ? Configuration.missingEntry : parseSimple(/Procedures:<\/font><\/font><\td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*<\/font><\/font>/)
+    #  arrayEntry['lastbox.TypeOfFile'] = Configuration.missingEntry
+    #  arrayEntry['lastbox.NumeroCelex'] = Configuration.missingEntry
+    #  arrayEntry['lastbox.Documents'] = ignoreLastBox ? Configuration.missingEntry : parseSimple(//)
+    return documents, procedures, typeOfFile, numeroCelex
+  end
+
+
+  # removes whitespaces and HTML tags from a given string
+  # maintains single word spacing blanks
+  def clean(string)
+    #remove HTML tags, if there are any
+    string.gsub!(/<.+?>/, '') unless ((string =~ /<.+?>/) == nil)
+
+    #convert &nbsp; into blanks
+    string.gsub!(/&nbsp;/, ' ')
+
+    #remove whitespaces
+    string.gsub!(/\r/, '')
+    string.gsub!(/\n/, '')
+    string.gsub!(/\t/, '')
+
+    #remove blanks at end
+    string.strip!
+
+    #convert multiple blanks into single blanks
+    string.gsub!(/\ +/, ' ')
+
+    return string
+  end
+
+
+
+  # fetches HTTP requests which use redirects
+  def fetch(uri_str, limit = 10)
+    # You should choose better exception.
+    raise ArgumentError, 'HTTP redirect too deep' if limit == 0
+
+    response = Net::HTTP.get_response(URI.parse(uri_str))
+    case response
+    when Net::HTTPSuccess then response
+    when Net::HTTPRedirection then fetch(response['location'], limit - 1)
+    else
+      response.error!
     end
-
-    timeline << {'titleOfStep' => title, 'timestamp' => timestamp, 'decision' => decision}
-  }
-
-  return timeline
-end
-
-def processLastBox lastTable
-  rows = lastTable.split(/(?=<tr>)/)
-  # remove the stuff before the first <tr>, immediately
-  rows.shift
-
-  # there can be several documents, thus: split it
-  documents = rows[1].split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
-  documents.shift # remove junk here
-  documents.collect! {|document| clean(document[/.*(?=<\/font>.*)/])}
-  documents = documents.join ', '
-
-  procedures = parseSimple(/Procedures:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[2])
-
-  typeOfFile = parseSimple(/Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[3])
-
-  numeroCelex = parseSimple(/'\)\">\s*<font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font>\s*<\/a>)/, rows[4])
-
-
-  #  ignoreLastBox = lastTable[/Documents.*Procedures.*Type of file.*NUMERO CELEX/m].nil?
-  #  arrayEntry['lastbox.Procedures'] = ignoreLastBox ? Configuration.missingEntry : parseSimple(/Procedures:<\/font><\/font><\td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*<\/font><\/font>/)
-  #  arrayEntry['lastbox.TypeOfFile'] = Configuration.missingEntry
-  #  arrayEntry['lastbox.NumeroCelex'] = Configuration.missingEntry
-  #  arrayEntry['lastbox.Documents'] = ignoreLastBox ? Configuration.missingEntry : parseSimple(//)
-  return documents, procedures, typeOfFile, numeroCelex
-end
-
-
-# removes whitespaces and HTML tags from a given string
-# maintains single word spacing blanks
-def clean(string)
-  #remove HTML tags, if there are any
-  string.gsub!(/<.+?>/, '') unless ((string =~ /<.+?>/) == nil)
-
-  #convert &nbsp; into blanks
-  string.gsub!(/&nbsp;/, ' ')
-
-  #remove whitespaces
-  string.gsub!(/\r/, '')
-  string.gsub!(/\n/, '')
-  string.gsub!(/\t/, '')
-
-  #remove blanks at end
-  string.strip!
-
-  #convert multiple blanks into single blanks
-  string.gsub!(/\ +/, ' ')
-
-  return string
-end
-
-
-
-# fetches HTTP requests which use redirects
-def fetch(uri_str, limit = 10)
-  # You should choose better exception.
-  raise ArgumentError, 'HTTP redirect too deep' if limit == 0
-
-  response = Net::HTTP.get_response(URI.parse(uri_str))
-  case response
-  when Net::HTTPSuccess then response
-  when Net::HTTPRedirection then fetch(response['location'], limit - 1)
-  else
-    response.error!
   end
-end
 
-def parseLawType
-  # find out the law type
-  begin
-    type = @content[/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/]
-    type.gsub!(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, '')
-    raise if type.empty?
-  rescue
-    # this law does not have "type" data
-    type = Configuration.missingEntry
+  def parseLawType
+    # find out the law type
+    begin
+      type = @content[/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/]
+      type.gsub!(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, '')
+      raise if type.empty?
+    rescue
+      # this law does not have "type" data
+      type = Configuration.missingEntry
+    end
+    return type
   end
-  return type
-end
 
-def lastBoxExistsAndIsRelevant?
-  @content[/<table BORDER=0 CELLSPACING=0 WIDTH="100%" BGCOLOR="#\w{6}">\s*<tr>\s*<td width="1%" BGCOLOR="#\w{6}">&nbsp;<\/td>\s*<td WIDTH="20%" BGCOLOR="#\w{6}">\s*<font face="Arial">\s*<font size=-2>\s*<B>24-10-1995<\/B>\s*<\/font>\s*<\/font>\s*<\/td>\s*<td ALIGN=CENTER WIDTH="69%" BGCOLOR="#\w{6}">\s*<font face="Arial">\s*<font size=-2>\s*<B>Signature by EP and Council<\/B>\s*<\/font>\s*<\/font>/m]
-end
+  #def lastBoxExistsAndIsRelevant?
+  #  @content[/<table BORDER=0 CELLSPACING=0 WIDTH="100%" BGCOLOR="#\w{6}">\s*<tr>\s*<td width="1%" BGCOLOR="#\w{6}">&nbsp;<\/td>\s*<td WIDTH="20%" BGCOLOR="#\w{6}">\s*<font face="Arial">\s*<font size=-2>\s*<B>24-10-1995<\/B>\s*<\/font>\s*<\/font>\s*<\/td>\s*<td ALIGN=CENTER WIDTH="69%" BGCOLOR="#\w{6}">\s*<font face="Arial">\s*<font size=-2>\s*<B>Signature by EP and Council<\/B>\s*<\/font>\s*<\/font>/m]
+  #end
 
 
-#   a general method to extract pieces of a long string (simulating multilength look-behinds)
-#     extracts a substring out of a given string
-#     i.e.: result = string[/(?<=noise1)substring(?=noise2)/m]
-#
-#     where string is given
-#     noise1 is beforepattern
-#     substring and noise2 is behindpattern (should include the (?=...))
-#     returns result (the isolated substring)
-#
-#    to get the result, the following happens
-#    1. beforepattern + behindpattern is extracted from string, behindpattern may contain a lookahead and thus, this noise is not selected
-#    2. beforepattern is deleted
-#    3. since behindpattern consists of .* and some noise, which is not selected from the string, the remaining string is the result
-#
-#    beforepattern is a regexp object
-#    behindpattern is a regexp object
-#    string is a string
-def parseSimple beforePattern, behindPattern, string
-  begin
-    #      p "neu in parsesimple\n"
-    result = string[Regexp.new(beforePattern.source + behindPattern.source, Regexp::MULTILINE)]
-    result.gsub! beforePattern, ''
-    result = clean(result)
-    raise if result.empty?
-  rescue
-    result = Configuration.missingEntry
+  #   a general method to extract pieces of a long string (simulating multilength look-behinds)
+  #     extracts a substring out of a given string
+  #     i.e.: result = string[/(?<=noise1)substring(?=noise2)/m]
+  #
+  #     where string is given
+  #     noise1 is beforepattern
+  #     substring and noise2 is behindpattern (should include the (?=...))
+  #     returns result (the isolated substring)
+  #
+  #    to get the result, the following happens
+  #    1. beforepattern + behindpattern is extracted from string, behindpattern may contain a lookahead and thus, this noise is not selected
+  #    2. beforepattern is deleted
+  #    3. since behindpattern consists of .* and some noise, which is not selected from the string, the remaining string is the result
+  #
+  #    beforepattern is a regexp object
+  #    behindpattern is a regexp object
+  #    string is a string
+  def parseSimple beforePattern, behindPattern, string
+    begin
+      #      p "neu in parsesimple\n"
+      result = string[Regexp.new(beforePattern.source + behindPattern.source, Regexp::MULTILINE)]
+      result.gsub! beforePattern, ''
+      result = clean(result)
+      raise if result.empty?
+    rescue
+      result = Configuration.missingEntry
+    end
+    return result
   end
-  return result
-end
 
-def parseLastBoxTypeOfFile
-  # find out the value for "type of file in the last box"
-  begin
-    stringStart = /<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/m
-    p "hier"
-    x = rml(stringStart, ".*(?=<\/font><\/font><\/td>\s*<\/tr>)")
-    puts x.nil?
-    puts x.inspect
-    puts x.class
-    p @content[-100..-1]
-    #      typeOfFileInTheLastBox = @content[rml(stringStart, ".*(?=<\/font><\/font><\/td>\s*<\/tr>)")]
-    p @content[/<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*(?=<\/font><\/font><\/td>\s*)/]
-    p @content[/<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*(?=<\/font><\/font><\/td>\s*<\/tr>)/m]
-    p "piep"
-    p "inhalt: #{typeOfFileInTheLastBox}"
-    typeOfFileInTheLastBox = typeOfFileInTheLastBox.gsub! stringStart, ''
-    # convert all \t resp. \r\n into blanks
-    typeOfFileInTheLastBox = clean(typeOfFileInTheLastBox)
-    p "vorm raise"
-    raise if typeOfFileInTheLastBox.empty?
-  rescue
-    # this law does not have "type of file in last box" data
-    p "im catch"
-    typeOfFileInTheLastBox = Configuration.missingEntry
+  #def parseLastBoxTypeOfFile
+  #  # find out the value for "type of file in the last box"
+  #  begin
+  #    stringStart = /<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/m
+  #    p "hier"
+  #    x = rml(stringStart, ".*(?=<\/font><\/font><\/td>\s*<\/tr>)")
+  #    puts x.nil?
+  #    puts x.inspect
+  #    puts x.class
+  #    p @content[-100..-1]
+  #    #      typeOfFileInTheLastBox = @content[rml(stringStart, ".*(?=<\/font><\/font><\/td>\s*<\/tr>)")]
+  #    p @content[/<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*(?=<\/font><\/font><\/td>\s*)/]
+  #    p @content[/<tr>\s*<td width="3">&nbsp;<\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>.*(?=<\/font><\/font><\/td>\s*<\/tr>)/m]
+  #    p "piep"
+  #    p "inhalt: #{typeOfFileInTheLastBox}"
+  #    typeOfFileInTheLastBox = typeOfFileInTheLastBox.gsub! stringStart, ''
+  #    # convert all \t resp. \r\n into blanks
+  #    typeOfFileInTheLastBox = clean(typeOfFileInTheLastBox)
+  #    p "vorm raise"
+  #    raise if typeOfFileInTheLastBox.empty?
+  #  rescue
+  #    # this law does not have "type of file in last box" data
+  #    p "im catch"
+  #    typeOfFileInTheLastBox = Configuration.missingEntry
+  #  end
+  #end
+
+  #def rml regexp, string
+  #  #    begin
+  #  #    r =
+  #  Regexp.new(regexp.source + string, Regexp::MULTILINE)
+  #  #    puts r.class
+  #  #    rescue
+  #  #      p "catchblock"
+  #  #    end
+  #  #return r
+  #end
+
+  def processFirstBox table
+    tableData = {}
+    rows = table.split(/(?=<tr>)/)
+    # remove the stuff before the first <tr>, immediately
+    rows.shift
+
+    # remove the first row, it is only the title and not of interest, here
+    rows.shift
+
+
+    # extract key and values, thus, iterate over each row, get the row entries
+    rows.each { |row|
+      # divide it in cells, but remove the junk before the first cell and also remove the first cell which is always empty
+      cells = row.split(/<td/)[2..3]
+      key = parseSimple(/VALIGN=TOP><font face="Arial"><font size=-2>/, /.*/, cells.first)
+
+      value = Configuration.missingEntry
+
+      # if the key is NUMERO CELEX or Documents, special measures have to be taken
+      if key[/Documents:/]
+        # there can be several documents, thus: split it
+        documents = cells.last.split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
+        documents.shift # remove junk here
+        documents.collect! {|document| clean(document[/.*(?=<\/font>.*)/])}
+        documents = documents.join ', '
+        value = documents
+      elsif key[/NUMERO CELEX/]
+        value = parseSimple(/'\)\">\s*<font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font>\s*<\/a>)/, cells.last)
+      else
+        value = parseSimple(/VALIGN=TOP>\s*<font face="Arial"><font size=-2>/, /.*/, cells.last)
+      end
+      tableData[key] = value
+    }
+
+    return tableData
+
+
+     
   end
-end
 
-def rml regexp, string
-  #    begin
-  #    r =
-  Regexp.new(regexp.source + string, Regexp::MULTILINE)
-  #    puts r.class
-  #    rescue
-  #      p "catchblock"
-  #    end
-  #return r
 end
