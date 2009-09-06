@@ -71,7 +71,7 @@ class ParserThread
 
       arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/tr>)/, @content)
 
-      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>/, /(\d{4}\/)?\d{4}\/(AVC|COD|SYN|CNS)(?=<\/font>\s*<\/font>)/, @content)
+      arrayEntry['Type'] = parseSimple(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, /(CNS|COD|SYN|AVC|ACC|PRT|CNB|CNC)(?=<\/font>\s*<\/font>)/, @content)
 
       if (lastBoxExistsAndIsRelevant?)
         arrayEntry['lastBox.TypeOfFile'] = parseLastBoxTypeOfFile
