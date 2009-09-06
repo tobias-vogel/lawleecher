@@ -98,12 +98,13 @@ class Fetcher
     lawIDs = lawIDs[0..0]#99]
     lawIDs = [187990]
     lawIDs = [100979]
-    lawIDs = [161462]
+    lawIDs = [161462, 153545, 152718, 150322, 150061, 147499, 146939, 146977]
+    
     # array containing all law information
     results = Array.new
 
     # counter for the current law (basically for informing the user)
-#    currentLawCount = 1
+    #    currentLawCount = 1
     
     # flag signalling whether there occured errors during processing
     thereHaveBeenErrors = false
@@ -117,63 +118,105 @@ class Fetcher
     # the array in which the threads (references) are stored
     threads = []
 
-#    puts "ich selbst bin thread:" + Thread.list.inspect
+    #    puts "ich selbst bin thread:" + Thread.list.inspect
 
     # large array which will contain all the parsed law details
     results = []
 
     vorher = Time.now
 
-#    erstesMal = true
-#    lieblingsthread = nil
+    #    erstesMal = true
+    #    lieblingsthread = nil
 
     while !lawIDs.empty?
+      puts "aktuelle threads (#{threads.size} stück):"
+      threads.each_index { |index| puts "thread #{index}: status=#{threads[index].status}, alive=#{threads[index].alive?}" }
       #print "laufende threads: #{Thread.list.size} von #{Configuration.numberOfParserThreads}\n"
 
+      # iterate over the list of threads and remove those, who have finished
+      threads.map! { |thread|
+        if !thread.alive?
+          # if thread is finished (= !alive), save the result and replace this thread entry with nil (to delete it, later)
+          results << thread.value
+          nil
+        else
+          # if the thread has not finished yet, replace the entry with itself (no change)
+          thread
+        end
+      }.compact!
+
+      
       # don't trust Thread.list.size (formerly used in:  if (Thread.list.size - 1 < Configuration.numberOfParserThreads)
       # instead: iterate over the threads array and check, whether all are still alive
       # and purge all dead threads
       # afterwards, the number of still living threads makes up the number of actually alive threads
-      threads.map! {|thread| thread if thread.alive?}.compact!
-#      p "#{threads.size} threads laut threads.size"
+      #wichtig!?      #threads.map! {|thread| thread if thread.alive?}.compact!
+
+
+
+      #      p "#{threads.size} threads laut threads.size"
 
       if (threads.size < Configuration.numberOfParserThreads)
         # start a new thread
-#        puts "starting a new thread because only #{Thread.list.size - 1} of #{Configuration.numberOfParserThreads} slots are used"
+        #        puts "starting a new thread because only #{Thread.list.size - 1} of #{Configuration.numberOfParserThreads} slots are used"
         theLawToProcess = lawIDs.shift
-        threads << Thread.new(theLawToProcess) { |lawID|
-          parserThread = ParserThread.new lawID, lock, results
-          parserThread.retrieveAndParseALaw
+        #        threads << Thread.new(theLawToProcess) { |lawID|
+        #          parserThread = ParserThread.new lawID, lock, results
+        #          parserThread.retrieveAndParseALaw
+        #        }
+
+        #        puts "hurra, kann einen neuen thread starten!!!!!11"
+        threads << Thread.new {
+#          p theLawToProcess
+          parserThread = ParserThread.new
+          parserThread.retrieveAndParseALaw theLawToProcess
+
+          #  2+2
+          #
+          #
+          #
+          #
+          #sleep rand * 10; 2+2
         }
       else
         # do not create a new thread now, instead wait a bit
-#        puts "currently, all slots are full"
+        #        puts "currently, all slots are full"
         #          puts Thread.list.inspect
         #    puts currentthreadcount if Thread.list.size == 1
         #Thread.pass
         #          puts ergebnis.inspect
-#        puts Thread.list.inspect
-        sleep 0.1
+        #        puts Thread.list.inspect
+        sleep 0.5
+        # TODO muss lieber sleep 0.1 sein
       end
-#      if erstesMal
-#        lieblingsthread = threads[0]
-#      end
-#      erstesMal = false;
+      #      if erstesMal
+      #        lieblingsthread = threads[0]
+      #      end
+      #      erstesMal = false;
 
-#      p "#{threads.size} threads gibt es laut threads.size"
-#      1000000.times do
-#        p lieblingsthread.alive?
-#      end
+      #      p "#{threads.size} threads gibt es laut threads.size"
+      #      1000000.times do
+      #        p lieblingsthread.alive?
+      #      end
 
     end
 
-#    threads.each {|thread| print "#{thread.alive?} "}
+    #    threads.each {|thread| print "#{thread.alive?} "}
 
+#    puts results.inspect
 
     puts "no more laws left, waiting for threads to finish"
-    threads.each {|thread| thread.join}
+    threads.each {|thread|
+      #      p "im threadjoin allgemein"
+      #      p thread.alive?
+      #p thread.value
+      thread.join
+      #      p thread.alive?
+      #      p thread.value
+      
+    }
 
-
+    p "nicht zu jedem gesetz ist was zurückgekommen" unless results.size == lawIDs.size
 
     nachher = Time.now
 

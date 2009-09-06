@@ -1,22 +1,23 @@
 # TODO lizenz einfügen
 class ParserThread
-  def initialize lawID, lock, results
+  def initialize #lawID, lock, results
     #    print "parser thread gestartet mit law ##{lawID}\n"
     # the ID of the law, which this thread will parse
-    @lawID = lawID
+    #    @lawID = lawID
 
     # the mutex to write the thread's result savely
-    @lock = lock
+    #    @lock = lock
 
     # the result variable in which the result will be written
-    @results = results
+    #    @results = results
   end
 
 
 
 
-  def retrieveAndParseALaw
-    p @lawID
+  def retrieveAndParseALaw lawID
+    @lawID = lawID
+#    p "das law ist = #{@lawID}"
     # to save all process steps on the left
     #    processStepNames = []
 
@@ -32,7 +33,7 @@ class ParserThread
       response = fetch("http://ec.europa.eu/prelex/detail_dossier_real.cfm?CL=en&DosId=#{@lawID}")
       @content = response.body
 
-      #@content[-100..-1]
+#      p @content[-100..-1]
       # prepare array containing all information for the current law
       arrayEntry = {}
 
@@ -125,10 +126,7 @@ class ParserThread
       }
       arrayEntry['ojConceil'] = ojConseil
       
-
- 
-
-    end
+      #    end
 
 =begin
 
@@ -256,38 +254,50 @@ class ParserThread
 
 =end
 
-    #      metaEndTime = Time.now
-    #      arrayEntry['MetaDuration'] = metaEndTime - metaStartTime
+      #      metaEndTime = Time.now
+      #      arrayEntry['MetaDuration'] = metaEndTime - metaStartTime
 
-    arrayEntry['ID'] = @lawID
+      arrayEntry['ID'] = @lawID
 
-    arrayEntry.each {|key, value| puts "#{key} -> #{value}"}
+      #    arrayEntry.each {|key, value| puts "#{key} -> #{value}"}
 
 
-    #      p arrayEntry.inspect
+      #      p arrayEntry.inspect
 
-    @lock.synchronize {
+
+
+
+
+
+
+      #    @lock.synchronize {
       #add all fetched information (which is stored in arrayEntry) in the results array, finally
-      @results << arrayEntry
+      #      @results << arrayEntry
 
       #        currentLawCount += 1
-    }
+      #    }
 
-  rescue Exception => ex
+    rescue Exception => ex
+      puts "EXCEPTION"
+      if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError
+        puts "Zeitüberschreitung bei Gesetz ##{@lawID}. Starte dieses Gesetz nochmal von vorne."
+        retry
+      elsif ex.message == 'empty law'
+        puts "Gesetz #{@lawID} scheint leer zu sein. Dieses Gesetz wird ignoriert."
+      else
+        puts "Es gab einen echten Fehler mit Gesetz ##{@lawID}. Dieses Gesetz wird ignoriert."
+        puts ex.message
+        puts ex.class
+        puts ex.backtrace
+        thereHaveBeenErrors = true
+        return @lawID
+      end
+    end #of exception handling
 
-    if ex.class == Errno::ECONNRESET or ex.class == Timeout::Error or ex.class == EOFError
-      puts "Zeitüberschreitung bei Gesetz ##{@lawID}. Starte dieses Gesetz nochmal von vorne."
-      retry
-    elsif ex.message == 'empty law'
-      puts "Gesetz #{@lawID} scheint leer zu sein. Dieses Gesetz wird ignoriert."
-    else
-      puts "Es gab einen echten Fehler mit Gesetz ##{@lawID}. Dieses Gesetz wird ignoriert."
-      puts ex.message
-      puts ex.class
-      puts ex.backtrace
-      thereHaveBeenErrors = true
-    end
-  end #of exception handling
+#    return "adasd"
+          return arrayEntry
+
+  end 
 
 
 

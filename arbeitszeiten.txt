@@ -16,3 +16,5 @@
 05.09.09: 0,25 stunden OJ conseil
 06.09.09: 0,25 stunden Typen erweitern
 06.09.09: 1,5 stunden erste box allerlei kram
+06.09.09: 1,5 + 1 threadsrückgabe
+06.09.09: 2220 test
