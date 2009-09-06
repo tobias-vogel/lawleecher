@@ -47,8 +47,43 @@ class Configuration # and settings
   
   # categories to crawl
   def Configuration.categories
-    ['Type', 'ID', 'Upper left identifier', 'Upper center identifier', 'Short description', 'Fields of activity', 'Legal basis', 'Procedures', 'Type of File', 'Primarily Responsible', 'DurationInformation']
+    [TYPE,
+      ID,
+      BLUEBOX_UPPERLEFTIDENTIFIER,
+      BLUEBOX_UPPERCENTERIDENTIFIER,
+      BLUEBOX_SHORTDESCRIPTION,
+      GREENBOX_FIELDSOFACTIVITY,
+      GREENBOX_LEGALBASIS,
+      GREENBOX_PROCEDURES,
+      GREENBOX_TYPEOFFILE,
+      FIRSTBOX,
+      LASTBOX_DOCUMENTS,
+      LASTBOX_PROCEDURES,
+      LASTBOX_TYPEOFFILE,
+      LASTBOX_NUMEROCELEX,
+      TIMELINE
+    ]
   end
+
+  # constants for the result hashes
+
+  TYPE = 'Type'
+  BLUEBOX_UPPERLEFTIDENTIFIER = 'bluebox.UpperLeftIdentifier'
+  BLUEBOX_UPPERCENTERIDENTIFIER = 'bluebox.UpperCenterIdentifier'
+  BLUEBOX_SHORTDESCRIPTION = 'bluebox.ShortDescription'
+  GREENBOX_FIELDSOFACTIVITY = 'greenbox.FieldsOfActivity'
+  GREENBOX_LEGALBASIS = 'greenbox.LegalBasis'
+  GREENBOX_PROCEDURES = 'greenbox.Procedures'
+  GREENBOX_TYPEOFFILE = 'greenbox.TypeOfFile'
+  TIMELINE = 'timeline'
+  FIRSTBOX = 'firstbox'
+  LASTBOX_DOCUMENTS = 'lastbox.Documents'
+  LASTBOX_PROCEDURES = 'lastbox.Procedures'
+  LASTBOX_TYPEOFFILE = 'lastbox.TypeOfFile'
+  LASTBOX_NUMEROCELEX = 'lastbox.NumeroCelex'
+  OJCONSEIL = 'ojConceil'
+  ID = 'ID'
+
   
   # file name of the export
   @@filename = "#{Dir.pwd}/export.csv"

@@ -56,6 +56,8 @@ class Saver
     begin
       file = File.new(filename, 'w')
 
+      p Configuration.categories
+
       # write header in file
       # Configuration.categories + processStepNames contain all keys of the laws,
       # except for metaDuration

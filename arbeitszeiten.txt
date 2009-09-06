@@ -17,4 +17,5 @@
 06.09.09: 0,25 stunden Typen erweitern
 06.09.09: 1,5 stunden erste box allerlei kram
 06.09.09: 1,5 + 1 threadsrückgabe
-06.09.09: 2220 test
+06.09.09: 1 stunde test
+06.09.09: 1,25 stunde saver

@@ -95,10 +95,12 @@ class Fetcher
   
   
   def retrieveLawContents(lawIDs)
-    lawIDs = lawIDs[0..0]#99]
-    lawIDs = [187990]
-    lawIDs = [100979]
-    lawIDs = [161462, 153545, 152718, 150322, 150061, 147499, 146939, 146977]
+    originalNumberOfLawIDs = lawIDs.size
+#    lawIDs = lawIDs[0..0]#99]
+#    lawIDs = [187990]
+#    lawIDs = [100979]
+#    lawIDs = [161462, 153545, 152718, 150322, 150061, 147499, 146939, 146977]
+#     lawIDs = [130213]
     
     # array containing all law information
     results = Array.new
@@ -128,7 +130,7 @@ class Fetcher
     #    erstesMal = true
     #    lieblingsthread = nil
 
-    while !lawIDs.empty?
+    while !lawIDs.empty?# or !threads.empty?
       puts "aktuelle threads (#{threads.size} stück):"
       threads.each_index { |index| puts "thread #{index}: status=#{threads[index].status}, alive=#{threads[index].alive?}" }
       #print "laufende threads: #{Thread.list.size} von #{Configuration.numberOfParserThreads}\n"
@@ -205,18 +207,19 @@ class Fetcher
 
 #    puts results.inspect
 
+    # catch all remaining threads here
     puts "no more laws left, waiting for threads to finish"
     threads.each {|thread|
       #      p "im threadjoin allgemein"
       #      p thread.alive?
-      #p thread.value
-      thread.join
+      results << thread.value
+#      p thread.join
       #      p thread.alive?
       #      p thread.value
       
     }
 
-    p "nicht zu jedem gesetz ist was zurückgekommen" unless results.size == lawIDs.size
+    p "nicht zu jedem gesetz ist was zurückgekommen" if results.size != originalNumberOfLawIDs
 
     nachher = Time.now
 
