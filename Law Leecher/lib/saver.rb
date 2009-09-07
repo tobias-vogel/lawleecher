@@ -50,43 +50,75 @@ class Saver
     end
   end
   
-  def save(laws, processStepNames, filename)
+  def save(laws, timelineTitles, filename)
     informUser({'status' => "Speichere in #{filename}..."})
     
     begin
       file = File.new(filename, 'w')
 
-      p Configuration.categories
+#      p Configuration.fixedCategories
 
       # write header in file
-      # Configuration.categories + processStepNames contain all keys of the laws,
-      # except for metaDuration
-      file.puts convertUTF8ToANSI(((Configuration.categories + processStepNames.sort).join(Configuration.separator)))
+      #       Configuration.categories + processStepNames contain all keys of the laws,
+      #       except for metaDuration
 
-      #write data in file
+      # first, write all categories which are always available (but might be empty)
+      headerFields = Configuration.fixedCategories
+
+      # second, add all the timelineTitles (each twice, one with date, another with decision)
+      timelineTitles.each { |title| headerFields.concat [title + '.date', title + '.decision']}
+
+      headerline = headerFields.join(Configuration.separator)
+#      file.puts convertUTF8ToANSI(((Configuration.categories + processStepNames.sort).join(Configuration.separator)))
+      file.puts convertUTF8ToANSI(headerline)
+
+      # write data in file
       laws.each do |law|
 
         # row contains all information for the current law (as array to be transformed by Array#join into a string, later)
-        row = Array.new
+        line = []
 
-        # first, save category data, since it is present at all laws
-        Configuration.categories.each do |category|
+        # first, save fixed category data, since it is present at all laws
+        Configuration.fixedCategories.each { |category|
           # category contains the current key like "legal basis" or "primarily responsible"
-          row << law[category]
-        end
+          line << law[category]
+        }
 
-        # second, save duration data
-        processStepNames.sort.each do |processStepName|
-          if law.key?(processStepName)
-            row << law.values_at(processStepName)[0]
+#        # second, save duration data
+#        processStepNames.sort.each do |processStepName|
+#          if law.key?(processStepName)
+#            line << law.values_at(processStepName)[0]
+#          else
+#            line << ''
+#          end
+#        end
+
+        # second, save all timeline data
+        timelineTitles.each { |timelineTitle|
+          timelineOfTheCurrentLaw = law['timeline']
+
+          # if the current law has this step (title) in the timeline, add its date and decision
+          # else: add two empty strings
+
+          stepTitleFoundAtIndex = -1
+
+          timelineOfTheCurrentLaw.each_with_index { |step, index| stepTitleFoundAtIndex = index if step['titleOfStep'] == timelineTitle }
+#          if 0 < timelineOfTheCurrentLaw.count { |step| step['titleOfStep'] == timelineTitle}
+          if stepTitleFoundAtIndex >= 0
+            # this law uses this step, thus: take the data
+            line << timelineOfTheCurrentLaw[stepTitleFoundAtIndex]['timestamp']
+            line << timelineOfTheCurrentLaw[stepTitleFoundAtIndex]['decision']
           else
-            row << ''
+            # this law doesn't use this step, thus: insert two empty strings
+            line << '' # for date
+            line << '' # for decision
           end
-        end
+        }
+
 
         # finally, join all elements together to form a string representation of
         # all the current law's contents which can be saved in the file
-        line = row.join(Configuration.separator)
+        line = line.join(Configuration.separator)
         file.puts convertUTF8ToANSI(line)
       end
 
@@ -94,15 +126,15 @@ class Saver
 
 
       # do some statistics
-      puts "#{laws.size} Gesetz(e) wurden in #{filename} geschrieben."
+#      puts "#{laws.size} Gesetz(e) wurden in #{filename} geschrieben."
 
 
 
-      sum = 0
-      averageDuration = 0
-      laws.each {|i| sum += i['MetaDuration']}
-      averageDuration = sum / laws.size unless laws.size == 0
-      return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich #{"%.2f"%averageDuration} Sekunden pro Gesetz"})
+#      sum = 0
+#      averageDuration = 0
+#      laws.each {|i| sum += i['MetaDuration']}
+#      averageDuration = sum / laws.size unless laws.size == 0
+#      return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich #{"%.2f"%averageDuration} Sekunden pro Gesetz"})
     end
   
   rescue Exception => ex

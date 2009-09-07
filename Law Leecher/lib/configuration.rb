@@ -28,6 +28,7 @@ class Configuration # and settings
   def Configuration.year
     ''
     '1970'      # to temporarily reduce the number of laws to crawl
+    '2003'
   end
   
   # maximum hits per form submit (originally: 99, default: 20)
@@ -37,7 +38,7 @@ class Configuration # and settings
   
   # csv file column separator
   def Configuration.separator
-    ';'#'#'
+    ","#';'#'#'
   end
 
   # the text which is put if a key has no value on the website
@@ -46,9 +47,10 @@ class Configuration # and settings
   end
   
   # categories to crawl
-  def Configuration.categories
-    [TYPE,
+  def Configuration.fixedCategories
+    [
       ID,
+      TYPE,
       BLUEBOX_UPPERLEFTIDENTIFIER,
       BLUEBOX_UPPERCENTERIDENTIFIER,
       BLUEBOX_SHORTDESCRIPTION,
@@ -56,14 +58,16 @@ class Configuration # and settings
       GREENBOX_LEGALBASIS,
       GREENBOX_PROCEDURES,
       GREENBOX_TYPEOFFILE,
-      FIRSTBOX,
       LASTBOX_DOCUMENTS,
       LASTBOX_PROCEDURES,
       LASTBOX_TYPEOFFILE,
       LASTBOX_NUMEROCELEX,
-      TIMELINE
     ]
   end
+
+#        FIRSTBOX,
+#      TIMELINE
+
 
   # constants for the result hashes
 

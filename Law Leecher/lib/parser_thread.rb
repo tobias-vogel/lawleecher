@@ -61,16 +61,16 @@ class ParserThread
 
       # since ruby 1.8.6 cannot handle positive look-behinds, the crawling is two-stepped
 
-      arrayEntry[Configuration.BLUEBOX_UPPERLEFTIDENTIFIER] = parseSimple(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>)/, @content)
-      arrayEntry[Configuration.BLUEBOX_UPPERCENTERIDENTIFIER] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)/, @content)
-      arrayEntry[Configuration.BLUEBOX_SHORTDESCRIPTION] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/, /.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)/, @content)
+      arrayEntry[Configuration::BLUEBOX_UPPERLEFTIDENTIFIER] = parseSimple(/<table BORDER=\"0\" WIDTH=\"100%\" bgcolor=\"#C0C0FF\">\s*<tr>\s*<td>\s*<table CELLPADDING=2 WIDTH=\"100%\" Border=\"0\">\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>)/, @content)
+      arrayEntry[Configuration::BLUEBOX_UPPERCENTERIDENTIFIER] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=LEFT VALIGN=TOP WIDTH=\"50%\">\s*<b><font face=\"Arial\"><font size=-1>/, /.*?(?=<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>)/, @content)
+      arrayEntry[Configuration::BLUEBOX_SHORTDESCRIPTION] = parseSimple(/<\/font><\/font><\/b>\s*<\/td>\s*<td ALIGN=RIGHT VALIGN=TOP>\s*<\/td>\s*<\/tr>\s*<tr>\s*<td ALIGN=LEFT VALIGN=TOP COLSPAN=\"3\" WIDTH=\"100%\">\s*<font face="Arial"><font size=-2>/, /.*?(?=<\/font><\/font>\s*<\/td>\s*<\/tr>)/, @content)
 
-      arrayEntry[Configuration.TYPE] = parseSimple(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, /(CNS|COD|SYN|AVC|ACC|PRT|CNB|CNC)(?=<\/font>\s*<\/font>)/, @content)
+      arrayEntry[Configuration::TYPE] = parseSimple(/<font face="Arial">\s*<font size=-1>(\d{4}\/)?\d{4}\//, /(CNS|COD|SYN|AVC|ACC|PRT|CNB|CNC)(?=<\/font>\s*<\/font>)/, @content)
 
-      arrayEntry[Configuration.GREENBOX_FIELDSOFACTIVITY] = parseSimple(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*/, /.*?(?=<\/tr>)/, @content)
-      arrayEntry[Configuration.GREENBOX_LEGALBASIS] = parseSimple(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
-      arrayEntry[Configuration.GREENBOX_PROCEDURES] = parseSimple(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
-      arrayEntry[Configuration.GREENBOX_TYPEOFFILE] = parseSimple(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
+      arrayEntry[Configuration::GREENBOX_FIELDSOFACTIVITY] = parseSimple(/Fields of activity:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>\s*/, /.*?(?=<\/tr>)/, @content)
+      arrayEntry[Configuration::GREENBOX_LEGALBASIS] = parseSimple(/Legal basis:\s*<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
+      arrayEntry[Configuration::GREENBOX_PROCEDURES] = parseSimple(/Procedures:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#EEEEEE">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
+      arrayEntry[Configuration::GREENBOX_TYPEOFFILE] = parseSimple(/Type of file:<\/font>\s*<\/center>\s*<\/td>\s*<td BGCOLOR="#FFFFFF">\s*<font face="Arial,Helvetica" size=-2>/, /.*?(?=<\/tr>)/, @content)
 
 
       #      if (lastBoxExistsAndIsRelevant?)
@@ -102,16 +102,16 @@ class ParserThread
 
 
 
-      arrayEntry[Configuration.TIMELINE] = processTimeline allTables
+      arrayEntry[Configuration::TIMELINE] = processTimeline allTables
 
 
       # first box items (whatever is in there)
-      arrayEntry[Configuration.FIRSTBOX] = processFirstBox allTables.first
+      arrayEntry[Configuration::FIRSTBOX] = processFirstBox allTables.first
       #arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/tr>)/, @content)
 
 
       # last box items (if available)
-      arrayEntry[Configuration.LASTBOX_DOCUMENTS], arrayEntry[Configuration.LASTBOX_PROCEDURES], arrayEntry[Configuration.LASTBOX_TYPEOFFILE], arrayEntry[Configuration.LASTBOX_NUMEROCELEX] = processLastBox allTables.last
+      arrayEntry[Configuration::LASTBOX_DOCUMENTS], arrayEntry[Configuration::LASTBOX_PROCEDURES], arrayEntry[Configuration::LASTBOX_TYPEOFFILE], arrayEntry[Configuration::LASTBOX_NUMEROCELEX] = processLastBox allTables.last
 
 
 
@@ -124,7 +124,7 @@ class ParserThread
           break
         end
       }
-      arrayEntry[Configuration.OJCONSEIL] = ojConseil
+      arrayEntry[Configuration::OJCONSEIL] = ojConseil
       
       #    end
 
@@ -257,7 +257,7 @@ class ParserThread
       #      metaEndTime = Time.now
       #      arrayEntry['MetaDuration'] = metaEndTime - metaStartTime
 
-      arrayEntry[Configuration.ID] = @lawID
+      arrayEntry[Configuration::ID] = @lawID
 
       #    arrayEntry.each {|key, value| puts "#{key} -> #{value}"}
 

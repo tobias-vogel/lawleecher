@@ -56,9 +56,9 @@ class Core
   def startProcess
     lawIDs = @theFetcher.retrieveLawIDs()
     
-    @laws, @processStepNames, errors = @theFetcher.retrieveLawContents(lawIDs)
+    @laws, @timelineTitles, errors = @theFetcher.retrieveLawContents(lawIDs)
     
-    info = @theSaver.save @laws, @processStepNames, @filename    
+    info = @theSaver.save @laws, @timelineTitles, @filename
     
     if errors
       info['status'] << ' There have been errors.' if info.has_key? 'status'

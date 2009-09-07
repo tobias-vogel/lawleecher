@@ -96,11 +96,11 @@ class Fetcher
   
   def retrieveLawContents(lawIDs)
     originalNumberOfLawIDs = lawIDs.size
-#    lawIDs = lawIDs[0..0]#99]
-#    lawIDs = [187990]
-#    lawIDs = [100979]
-#    lawIDs = [161462, 153545, 152718, 150322, 150061, 147499, 146939, 146977]
-#     lawIDs = [130213]
+    #    lawIDs = lawIDs[0..0]#99]
+    #    lawIDs = [187990]
+    #    lawIDs = [100979]
+    #    lawIDs = [161462, 153545, 152718, 150322, 150061, 147499, 146939, 146977]
+    lawIDs = [130213, 161462]
     
     # array containing all law information
     results = Array.new
@@ -169,7 +169,7 @@ class Fetcher
 
         #        puts "hurra, kann einen neuen thread starten!!!!!11"
         threads << Thread.new {
-#          p theLawToProcess
+          #          p theLawToProcess
           parserThread = ParserThread.new
           parserThread.retrieveAndParseALaw theLawToProcess
 
@@ -188,8 +188,7 @@ class Fetcher
         #Thread.pass
         #          puts ergebnis.inspect
         #        puts Thread.list.inspect
-        sleep 0.5
-        # TODO muss lieber sleep 0.1 sein
+        sleep 0.1
       end
       #      if erstesMal
       #        lieblingsthread = threads[0]
@@ -205,7 +204,7 @@ class Fetcher
 
     #    threads.each {|thread| print "#{thread.alive?} "}
 
-#    puts results.inspect
+    #    puts results.inspect
 
     # catch all remaining threads here
     puts "no more laws left, waiting for threads to finish"
@@ -213,7 +212,7 @@ class Fetcher
       #      p "im threadjoin allgemein"
       #      p thread.alive?
       results << thread.value
-#      p thread.join
+      #      p thread.join
       #      p thread.alive?
       #      p thread.value
       
@@ -225,6 +224,69 @@ class Fetcher
 
     puts "Dauer bei #{Configuration.numberOfParserThreads} threads: #{nachher - vorher}"
 
-    return results, processStepNames.to_a, thereHaveBeenErrors
+
+    # extract the keys of the timeline hash in all of the crawled laws (used for creating the header line in the export file)r
+    timelineKeys, results = extractTimelineKeysFromCrawledLaws results
+
+    
+
+    return results, timelineKeys, thereHaveBeenErrors
+  end
+
+
+
+  private
+
+  # finds out all timeline keys (e.g. "Adoption by Commission", "EP Opinion 2nd reading")
+  # these are used for the header line of the export file
+  # some can occur several times, thus they have to be made unique, e.g. "Adoption by Commission001", "Adoption by Commission002"
+  # input are laws, which are hashes with a key named "timeline", this entry is an array of hashes
+  # each of these hashes has three entries of which one is named titleOfStep
+  # this is the string of relevance, here, called the "timeline key"
+  def extractTimelineKeysFromCrawledLaws results
+    timelineKeys = []
+
+    # go through each law and examine the set of keys in the timeline array
+    # while iterating through each law, rename the titleOfStep-values to
+    # "abc001" or "abc002"... if they already exist for this law
+    # e.g. timeline = [{"titleOfStep" => "abc"}, {"titleOfStep" => "xxx", {"titleOfStep" => "abc"}]
+    # this results in
+    # timeline = [{"titleOfStep" => "abc001"}, {"titleOfStep" => "xxx001", {"titleOfStep" => "abc002"}]
+    #
+    # at the same time, a list of all the values has also to be tracked, e.g. ["abc001", "xxx001", "abc002"]
+
+    results.each { |law|
+      # this is the temporary storage of timelineKey names ("abc001", ...)
+      timelineKeysUsedInThisLaw = []
+      timeline = law['timeline']
+      
+      timeline.each { |step|
+#        p step
+#        p "---"
+        # extract the step's title and introduce the enummeration
+        stepTitle = step['titleOfStep'] + '001'
+
+        # this number (001) might have been in use already, if the title did appear before
+        # thus, possibly find the next free index, e.g. 002, 003, 004...
+        while timelineKeysUsedInThisLaw.member? stepTitle
+          stepTitle.next!
+        end
+
+        # now, stepTitle has an index which is unique for this law (because of the law-overall timelineKeysUsedInThisLaw-array)
+        # it is saved with the current index and also saved in the array (for that it is being found for later step titles)
+        step['titleOfStep'] = stepTitle
+        timelineKeysUsedInThisLaw << stepTitle
+#        p step
+      } # end of this step
+
+      # save the changed timeline back into the law
+      law['timeline'] = timeline
+
+      # save the used timeline titles in the global list, so that the export file header can make display it
+      timelineKeys.concat timelineKeysUsedInThisLaw
+      timelineKeys.uniq!
+    } # end of this law
+    
+    return timelineKeys, results
   end
 end
