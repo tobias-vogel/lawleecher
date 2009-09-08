@@ -351,7 +351,7 @@ class ParserThread
       documents = rows[1].split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
       documents.shift # remove junk here
       documents.collect! {|document| clean(document[/.*(?=<\/font>.*)/])}
-      documents = documents.join ', '
+      documents = documents.join Configuration.innerSeparator
     end
     procedures = parseSimple(/Procedures:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[2])
 
@@ -518,7 +518,7 @@ class ParserThread
         documents = cells.last.split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
         documents.shift # remove junk here
         documents.collect! {|document| clean(document[/.*(?=<\/font>.*)/])}
-        documents = documents.join ', '
+        documents = documents.join Configuration.innerSeparator
         value = documents
       elsif key[/NUMERO CELEX/]
         value = parseSimple(/'\)\">\s*<font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font>\s*<\/a>)/, cells.last)

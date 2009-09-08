@@ -37,9 +37,16 @@ class Configuration # and settings
   end
   
   # csv file column separator
-  def Configuration.separator
-    ","#';'#'#'
+  def Configuration.columnSeparator
+    '#'
   end
+
+  # inner separator, e.g. for documents
+  def Configuration.innerSeparator
+    ', '
+  end
+
+
 
   # the text which is put if a key has no value on the website
   def Configuration.missingEntry

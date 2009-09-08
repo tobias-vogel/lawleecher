@@ -50,52 +50,81 @@ class Saver
     end
   end
   
-  def save(laws, timelineTitles, filename)
+  def save(laws, timelineTitles, firstboxKeys, filename)
     informUser({'status' => "Speichere in #{filename}..."})
     
     begin
       file = File.new(filename, 'w')
 
-#      p Configuration.fixedCategories
+      # basically, two things are done here:
+      # first, the title line is composed of several array (fixed parts, variable ones)
+      # second, a really big table is created where all laws and all their information are stored
+      # each row is a hash
+      # this table is then serialized in the file
+      # one table row contains one law, basically flattening its contents
+      reallyBigTable = []
+      
+      #      p Configuration.fixedCategories
 
       # write header in file
       #       Configuration.categories + processStepNames contain all keys of the laws,
       #       except for metaDuration
 
+
       # first, write all categories which are always available (but might be empty)
-      headerFields = Configuration.fixedCategories
+      headerRow = {}
+      Configuration.fixedCategories.each {|category| headerRow[category] = category}
 
       # second, add all the timelineTitles (each twice, one with date, another with decision)
-      timelineTitles.each { |title| headerFields.concat [title + '.date', title + '.decision']}
+      timelineTitles.each { |title|
+        headerRow[title + '.date'] = title + '.date'
+        headerRow[title + '.decision'] = title + '.decision'
+      }
 
-      headerline = headerFields.join(Configuration.separator)
-#      file.puts convertUTF8ToANSI(((Configuration.categories + processStepNames.sort).join(Configuration.separator)))
-      file.puts convertUTF8ToANSI(headerline)
+      # third, add all the firstboxKeys
+      firstboxKeys.each { |key| headerRow['firstbox.' + key] = 'fistbox.' + key}
 
+      
+      reallyBigTable << headerRow
+
+
+
+
+      #      headerline = headerFields.join(Configuration.columnSeparator)
+      #      file.puts convertUTF8ToANSI(((Configuration.categories + processStepNames.sort).join(Configuration.columnSeparator)))
+      #      file.puts convertUTF8ToANSI(headerline)
       # write data in file
-      laws.each do |law|
 
-        # row contains all information for the current law (as array to be transformed by Array#join into a string, later)
-        line = []
+      # now, create a line in this really big table for each law
 
-        # first, save fixed category data, since it is present at all laws
+      laws.each { |law|
+
+        # the row, which will be successively filled
+        row = {}
+
+        # first, save fixed category data, since it is reliably present at all laws (but maybe with empty strings)
         Configuration.fixedCategories.each { |category|
+          
           # category contains the current key like "legal basis" or "primarily responsible"
-          line << law[category]
+          row[category] = law[category]
         }
 
-#        # second, save duration data
-#        processStepNames.sort.each do |processStepName|
-#          if law.key?(processStepName)
-#            line << law.values_at(processStepName)[0]
-#          else
-#            line << ''
-#          end
-#        end
+        #        # second, save duration data
+        #        processStepNames.sort.each do |processStepName|
+        #          if law.key?(processStepName)
+        #            line << law.values_at(processStepName)[0]
+        #          else
+        #            line << ''
+        #          end
+        #        end
 
         # second, save all timeline data
+        timelineOfTheCurrentLaw = law['timeline'].each { |step|
+          row[step['titleOfStep'] + '.date'] = step['timestamp']
+          row[step['titleOfStep'] + '.decision'] = step['decision']
+        }
+=begin
         timelineTitles.each { |timelineTitle|
-          timelineOfTheCurrentLaw = law['timeline']
 
           # if the current law has this step (title) in the timeline, add its date and decision
           # else: add two empty strings
@@ -103,38 +132,59 @@ class Saver
           stepTitleFoundAtIndex = -1
 
           timelineOfTheCurrentLaw.each_with_index { |step, index| stepTitleFoundAtIndex = index if step['titleOfStep'] == timelineTitle }
-#          if 0 < timelineOfTheCurrentLaw.count { |step| step['titleOfStep'] == timelineTitle}
+          #          if 0 < timelineOfTheCurrentLaw.count { |step| step['titleOfStep'] == timelineTitle}
           if stepTitleFoundAtIndex >= 0
             # this law uses this step, thus: take the data
-            line << timelineOfTheCurrentLaw[stepTitleFoundAtIndex]['timestamp']
-            line << timelineOfTheCurrentLaw[stepTitleFoundAtIndex]['decision']
+            row << timelineOfTheCurrentLaw[stepTitleFoundAtIndex]['timestamp']
+            row << timelineOfTheCurrentLaw[stepTitleFoundAtIndex]['decision']
           else
             # this law doesn't use this step, thus: insert two empty strings
-            line << '' # for date
-            line << '' # for decision
+            row << '' # for date
+            row << '' # for decision
           end
         }
+=end
+
+        # third, save all firstbox data
+        firstboxKeys.each { |key|
+          row['firstbox.' + key] = law[Configuration::FIRSTBOX][key]
+
+          }
+
+        reallyBigTable << row
+
+      }
 
 
-        # finally, join all elements together to form a string representation of
-        # all the current law's contents which can be saved in the file
-        line = line.join(Configuration.separator)
+      # now, save all the stuff
+      #
+      reallyBigTable.each { |row|
+        line = []
+        headerRow.each_key { |key|
+          line << row[key]
+        }
+        line = line.join Configuration.columnSeparator
         file.puts convertUTF8ToANSI(line)
-      end
+      }
+      # finally, join all elements together to form a string representation of
+      # all the current law's contents which can be saved in the file
+      #        line = line.join(Configuration.columnSeparator)
+      #        file.puts convertUTF8ToANSI(line)
+
 
       file.close
 
 
       # do some statistics
-#      puts "#{laws.size} Gesetz(e) wurden in #{filename} geschrieben."
+      #      puts "#{laws.size} Gesetz(e) wurden in #{filename} geschrieben."
 
 
 
-#      sum = 0
-#      averageDuration = 0
-#      laws.each {|i| sum += i['MetaDuration']}
-#      averageDuration = sum / laws.size unless laws.size == 0
-#      return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich #{"%.2f"%averageDuration} Sekunden pro Gesetz"})
+      #      sum = 0
+      #      averageDuration = 0
+      #      laws.each {|i| sum += i['MetaDuration']}
+      #      averageDuration = sum / laws.size unless laws.size == 0
+      #      return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich #{"%.2f"%averageDuration} Sekunden pro Gesetz"})
     end
   
   rescue Exception => ex
