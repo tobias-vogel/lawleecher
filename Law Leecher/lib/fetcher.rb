@@ -96,11 +96,11 @@ class Fetcher
   
   def retrieveLawContents(lawIDs)
     originalNumberOfLawIDs = lawIDs.size
-    #    lawIDs = lawIDs[0..0]#99]
+        lawIDs = lawIDs[0..250]
     #    lawIDs = [187990]
     #    lawIDs = [100979]
     #    lawIDs = [161462, 153545, 152718, 150322, 150061, 147499, 146939, 146977]
-    lawIDs = [130213, 161462]
+#    lawIDs = [130213, 161462]
     
     # array containing all law information
     results = Array.new
