@@ -24,11 +24,12 @@
 
 class Configuration # and settings
 
-  # year filter to apply (empty string for all years)
-  def Configuration.year
-    ''
-#    '1970'      # to temporarily reduce the number of laws to crawl
-    '2003'
+  # year in which the crawling starts
+  def Configuration.startYear
+    1969
+#   1970      # to temporarily reduce the number of laws to crawl
+#   2003
+#   1954
   end
   
   # maximum hits per form submit (originally: 99, default: 20)

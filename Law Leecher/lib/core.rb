@@ -70,8 +70,8 @@ class Core
   
   # callback to the gui
   def callback(bunchOfInformation)
-    puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
-    @theGui.updateWidgets(bunchOfInformation) if Configuration.guiEnabled
+#    puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
+#    @theGui.updateWidgets(bunchOfInformation) if Configuration.guiEnabled
   end
   
   def readyToStart?(overWritingPermitted)

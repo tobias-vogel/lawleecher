@@ -17,7 +17,7 @@ class ParserThread
 
   def retrieveAndParseALaw lawID
     @lawID = lawID
-    #    p "das law ist = #{@lawID}"
+        print "das law ist = #{@lawID}\n"
     # to save all process steps on the left
     #    processStepNames = []
 
@@ -40,16 +40,21 @@ class ParserThread
 
 
       # check, whether some specific errors occured
-      if !@content[/<H1>Database Error<\/H1>/].nil? then
-        puts 'This law produced a data base error and thus, is ommitted.'
+      if @content[/<H1>Database Error<\/H1>/]
+        puts "Law #{@lawID} produced a data base error and thus, is ommitted."
         return
       end
 
-      if !@content[/<H1>Unexpected Error<\/H1>/].nil? then
-        puts 'This law produced an "unexpected error" and thus, is ommitted.'
+      if @content[/<H1>Unexpected Error<\/H1>/]
+        puts "Law #{@lawID} produced an \"unexpected error\" and thus, is ommitted."
         return
       end
 
+      # check, whether fields of activity follows events immediately: then, it is empty
+      if @content[/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<\/table>\s*<\/td>\s*<td width="70%" valign="top">\s*<table BORDER=0 CELLSPACING=0 COLS=2 WIDTH="100%" BGCOLOR="#EEEEEE" >\s*<tr>\s*<td BGCOLOR="#AEFFAE">\s*<center>\s*<font face="Arial,Helvetica" size=-2>Fields of activity:<\/font>/]
+        puts "Law #{@lawID} is empty."
+        return
+      end
 
 
 

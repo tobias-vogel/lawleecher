@@ -33,7 +33,7 @@
 
 require 'core.rb'
 
-puts 'Year filter is activated. In debug mode?' unless Configuration.year.empty?
+puts 'Year filter is activated. In debug mode?' unless Configuration.startYear == '1969'
 puts "separator falsch" unless Configuration.columnSeparator == '#'
 
 theCore = Core.new

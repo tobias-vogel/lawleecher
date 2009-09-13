@@ -21,7 +21,7 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#TODO heapsize und so jedenfalls für java ändern (in doku schreiben)
 require 'net/http'
 require 'set'
 require 'configuration.rb'
@@ -41,45 +41,62 @@ class Fetcher
   
   def retrieveLawIDs
     #array containing all law ids
-    lawIDs = Array.new
+    lawIDs = []
     
-    http = Net::HTTP.start('ec.europa.eu')
-    
-    # we will retrieve a 25 MB HTML file, which might take longer
-    http.read_timeout = 300
-    http.open_timeout = 300
-
     informUser({'status' => 'Frage alle Gesetze an. Das kann durchaus mal zwei Minuten oder mehr dauern.'})
-    response = http.post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{Configuration.year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
-    content = response.body
+    (Configuration.startYear..Time.now.year).each { |year|
+    
+      http = Net::HTTP.start('ec.europa.eu')
+    
+      # we will retrieve a 25 MB HTML file, which might take longer
+      http.read_timeout = 300
+      http.open_timeout = 300
+
+      puts "Start der Anfrage (#{year})..."
+      response = http.post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
+      puts "Antwort angekommen"
+      content = response.body
 
 
-    # check, whether all hits are on the page
-    # there are two ways to check it, we use both for safety reasons
-
-    # first, compare the last number with the max number (e.g. 46/2110)
-    # if it's equal, all hits are on this page, which is good, otherwise: bad
-
-    lastEntryOnPage = content[/\d{1,5}\/\d{1,5}(?=<\/div>\s*<\/TD>\s*<\/TR>\s*<TR bgcolor=\"#(ffffcc|ffffff)\">\s*<TD colspan=\"2\" VALIGN=\"top\">\s*<FONT CLASS=\"texte\">.*<\/FONT>\s*<\/TD>\s*<\/TR>\s*<\/table>\s*<center>\s*<TABLE border=0 cellpadding=0 cellspacing=0>\s*<tr align=\"center\">\s*<\/tr>\s*<\/table>\s*<\/center>\s*<!-- BOTTOM NAVIGATION BAR)/]
-
-    lastEntry, maxEntries = lastEntryOnPage.split('/', 2)
-
-    raise 'Not all laws on page. (last entry != number of entries)' unless lastEntry == maxEntries
+      # check, whether all hits are on the page
+      # there are two ways to check it, we use both for safety reasons
 
 
-    # second, the pagination buttons must not be present (at least no "page 2" button)
-    raise 'There are pagination buttons, not all laws would be retrieved.' unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
+
+      #    html = File.new("resultliste_#{startYear}.html", "w")
+      #    html.puts(content)
+      #    html.close
+
+    
+
+      raise 'There are no laws on this page.' if content[/The document is not available in PreLex./]
+
+      lastEntryOnPage = content[/\d{1,5}\/\d{1,5}(?=<\/div>\s*<\/TD>\s*<\/TR>\s*<TR bgcolor=\"#(ffffcc|ffffff)\">\s*<TD colspan=\"2\" VALIGN=\"top\">\s*<FONT CLASS=\"texte\">.*<\/FONT>\s*<\/TD>\s*<\/TR>\s*<\/table>\s*<center>\s*<TABLE border=0 cellpadding=0 cellspacing=0>\s*<tr align=\"center\">\s*<\/tr>\s*<\/table>\s*<\/center>\s*<!-- BOTTOM NAVIGATION BAR)/]
+      lastEntry, maxEntries = lastEntryOnPage.split('/')
+
+      # first, compare the last number with the max number (e.g. 46/2110)
+      # if it's equal, all hits are on this page, which is good, otherwise: bad
+      raise 'Not all laws on page. (last entry != number of entries)' unless lastEntry == maxEntries
+
+      # second, the pagination buttons must not be present (at least no "page 2" button)
+      raise 'There are pagination buttons, not all laws would be retrieved.' unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
 
 
-    #fetch out ids for each single law as array and append it to the current set of ids
-    #the uniq! removes double ids (<a href="id">id</a>)
-    lawIDs = content.scan(/\d{1,6}(?=" title="Click here to reach the detail page of this file">)/)
-    lawIDs.uniq! # to eliminate the twin of each law id (which is inevitably included)
-    lawIDs.delete 219546 # this law is is an empty entry
+      #fetch out ids for each single law as array and append it to the current set of ids
+      #the uniq! removes double ids (<a href="id">id</a>)
+      additionalLawIDs = content.scan(/\d{1,6}(?=" title="Click here to reach the detail page of this file">)/)
+      additionalLawIDs.uniq! # to eliminate the twin of each law id (which is inevitably included)
+      # remove empty laws
+      #    lawIDs.delete '219546'
+      #    lawIDs.delete '193502'
+      #    lawIDs.delete '192533'
 
-    informUser({'status' => "#{maxEntries} Gesetze gefunden"})
-      
+      lawIDs.concat additionalLawIDs
 
+
+    }
+    informUser({'status' => "#{lawIDs.size} Gesetze gefunden"})
+    puts "#{lawIDs.size} Gesetze gefunden"
     return lawIDs
   end
   
@@ -96,11 +113,14 @@ class Fetcher
   
   def retrieveLawContents(lawIDs)
     originalNumberOfLawIDs = lawIDs.size
-        lawIDs = lawIDs[0..250]
+    #    p lawIDs
+    #    lawIDs = lawIDs[0..350]
     #    lawIDs = [187990]
     #    lawIDs = [100979]
     #    lawIDs = [161462, 153545, 152718, 150322, 150061, 147499, 146939, 146977]
-#    lawIDs = [130213, 161462]
+    #    lawIDs = [130213, 161462]
+    #    lawIDs = [194075, 130213]
+#    lawIDs = [104677]
     
     # array containing all law information
     results = Array.new
@@ -112,10 +132,10 @@ class Fetcher
     thereHaveBeenErrors = false
     
     # set of process step names (will be collected to be used for the csv file columns)
-    processStepNames = Set.new
+    #    processStepNames = Set.new
     
     # the mutex which is needed to synchronicly save the dataset of details a parsed law into the result set
-    lock = Monitor.new
+    #    lock = Monitor.new
 
     # the array in which the threads (references) are stored
     threads = []
@@ -131,15 +151,16 @@ class Fetcher
     #    lieblingsthread = nil
 
     while !lawIDs.empty?# or !threads.empty?
-      puts "aktuelle threads (#{threads.size} stück):"
-      threads.each_index { |index| puts "thread #{index}: status=#{threads[index].status}, alive=#{threads[index].alive?}" }
+      #      puts "aktuelle threads (#{threads.size} stück):"
+      #      threads.each_index { |index| puts "thread #{index}: status=#{threads[index].status}, alive=#{threads[index].alive?}" }
       #print "laufende threads: #{Thread.list.size} von #{Configuration.numberOfParserThreads}\n"
 
       # iterate over the list of threads and remove those, who have finished
       threads.map! { |thread|
         if !thread.alive?
           # if thread is finished (= !alive), save the result and replace this thread entry with nil (to delete it, later)
-          results << thread.value
+          threadResult = thread.value
+          results << threadResult unless threadResult.nil?
           nil
         else
           # if the thread has not finished yet, replace the entry with itself (no change)
@@ -211,7 +232,8 @@ class Fetcher
     threads.each {|thread|
       #      p "im threadjoin allgemein"
       #      p thread.alive?
-      results << thread.value
+      threadResult = thread.value
+      results << threadResult unless threadResult.nil?
       #      p thread.join
       #      p thread.alive?
       #      p thread.value
@@ -265,8 +287,8 @@ class Fetcher
       timeline = law[Configuration::TIMELINE]
       
       timeline.each { |step|
-#        p step
-#        p "---"
+        #        p step
+        #        p "---"
         # extract the step's title and introduce the enummeration
         stepTitle = step['titleOfStep'] + '001'
 
@@ -280,7 +302,7 @@ class Fetcher
         # it is saved with the current index and also saved in the array (for that it is being found for later step titles)
         step['titleOfStep'] = stepTitle
         timelineKeysUsedInThisLaw << stepTitle
-#        p step
+        #        p step
       } # end of this step
 
       # save the changed timeline back into the law
@@ -314,10 +336,10 @@ class Fetcher
 
     results.each { |law|
       # this is the temporary storage of timelineKey names ("abc001", ...)
-#      firstboxKeysUsedInThisLaw = []
+      #      firstboxKeysUsedInThisLaw = []
       firstboxHash = law[Configuration::FIRSTBOX]
-#      firstboxKeys.concat firstboxHash.keys
-#      firstboxKeys.uniq!
+      #      firstboxKeys.concat firstboxHash.keys
+      #      firstboxKeys.uniq!
 =begin
       timeline.each { |step|
 #        p step

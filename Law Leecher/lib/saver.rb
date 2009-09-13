@@ -40,11 +40,11 @@ class Saver
     @theCore.callback bunchOfInformation
   end
 
-  def convertUTF8ToANSI(string)
+  def convertUTF8ToANSI(string, law)
     begin
       Iconv.new('iso-8859-1', 'utf-8').iconv(string)  
     rescue Iconv::IllegalSequence => is
-      puts "Unicode character conversion error: #{is.message}"
+      puts "law ##{law}: Unicode character conversion error: #{is.message}"
       puts "Writing it inconverted"
       return string
     end
@@ -52,7 +52,13 @@ class Saver
   
   def save(laws, timelineTitles, firstboxKeys, filename)
     informUser({'status' => "Speichere in #{filename}..."})
-    
+
+
+    p "konvertierungstest"
+    laws.each { |law| convertUTF8ToANSI(law.inspect, law[Configuration::ID])}
+
+
+
     begin
       file = File.new(filename, 'w')
 
