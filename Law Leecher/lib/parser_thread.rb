@@ -17,7 +17,7 @@ class ParserThread
 
   def retrieveAndParseALaw lawID
     @lawID = lawID
-        print "das law ist = #{@lawID}\n"
+    print "das law ist = #{@lawID}\n"
     # to save all process steps on the left
     #    processStepNames = []
 
@@ -353,10 +353,14 @@ class ParserThread
     documents = Configuration.missingEntry
     if rows[0][/Documents:/]
       # there can be several documents, thus: split it
-      documents = rows[1].split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
+      #      documents = rows[1].split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
+      documents = rows[1].split /'<BR>/
+      documents.pop
       documents.shift # remove junk here
-      documents.collect! {|document| clean(document[/.*(?=<\/font>.*)/])}
-      documents = documents.join Configuration.innerSeparator
+      documents.collect! {|document|
+        parseSimple(/.*<font size=-2>/, /.*(?=<\/font><\/font>\s*(<\/a>)?)/, documents)
+        documents = documents.join Configuration.innerSeparator
+      }
     end
     procedures = parseSimple(/Procedures:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[2])
 
@@ -451,8 +455,9 @@ class ParserThread
   def parseSimple beforePattern, behindPattern, string
     begin
       #      p "neu in parsesimple\n"
-      result = string[Regexp.new(beforePattern.source + behindPattern.source, Regexp::MULTILINE)]
-      result.gsub! beforePattern, ''
+      regexp = Regexp.new(beforePattern.source + behindPattern.source, Regexp::MULTILINE)
+      result = string[regexp]
+      result.gsub! Regexp.new(beforePattern.source, Regexp::MULTILINE), ''
       result = clean(result)
       raise if result.empty?
     rescue
@@ -520,9 +525,14 @@ class ParserThread
       # if the key is NUMERO CELEX or Documents, special measures have to be taken
       if key[/Documents:/]
         # there can be several documents, thus: split it
-        documents = cells.last.split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
-        documents.shift # remove junk here
-        documents.collect! {|document| clean(document[/.*(?=<\/font>.*)/])}
+        documents = cells.last.split /<BR>/
+        documents.pop # remove junk here
+
+        #        documents = cells.last.split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
+        #        documents.shift # remove junk here
+        documents.collect! {|document| parseSimple(/.*<font size=-2>/, /.*(?=<\/font><\/font>\s*(<\/a>)?)/, document)
+          #          clean(document[/.*(?=<\/font>.*)/])
+        }
         documents = documents.join Configuration.innerSeparator
         value = documents
       elsif key[/NUMERO CELEX/]

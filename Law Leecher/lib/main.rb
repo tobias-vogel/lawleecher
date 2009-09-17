@@ -56,6 +56,24 @@ if (ARGV.member? "--nogui")
 
   Configuration.overwritePermission = ARGV.member? '--overwriteexistingfile'
 
+#TODO die anderen parameter hier auch reinnehmen
+
+  ARGV.each { |argument|
+    case argument
+    when /--startyear=.+/
+      argument = argument.gsub /--startyear=/, ''
+      Configuration.startYear = argument.to_i unless argument.nil?
+    end
+
+
+
+  }
+#  startYearFromParams = ARGV.map {|param| param if param[/--startyear=.+/]}.compact.first
+#  startYearFromParams.gsub!(/--startyear=/, '').to_i unless startYearFromParams.nil?
+#  Configuration.startYear = startYearFromParams.empty? ? Configuration.startYear : startYearFromParams
+  puts Configuration.startYear
+
+
   theCore.startProcess
 else
   require 'g_u_i.rb'

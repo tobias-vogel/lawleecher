@@ -115,15 +115,10 @@ class Fetcher
     originalNumberOfLawIDs = lawIDs.size
     #    p lawIDs
     #    lawIDs = lawIDs[0..350]
-    #    lawIDs = [187990]
-    #    lawIDs = [100979]
-    #    lawIDs = [161462, 153545, 152718, 150322, 150061, 147499, 146939, 146977]
-    #    lawIDs = [130213, 161462]
-    #    lawIDs = [194075, 130213]
-#    lawIDs = [104677]
+    lawIDs = [153545]
     
     # array containing all law information
-    results = Array.new
+    results = []
 
     # counter for the current law (basically for informing the user)
     #    currentLawCount = 1
@@ -244,8 +239,11 @@ class Fetcher
 
     nachher = Time.now
 
-    puts "Dauer bei #{Configuration.numberOfParserThreads} threads: #{nachher - vorher}"
+    puts text = "Dauer bei #{Configuration.numberOfParserThreads} threads: #{nachher - vorher}"
 
+    dump = File.new "#{Time.now.usec}.text", "w"
+    dump.puts text
+    dump.close
 
     # extract the keys of the timeline hash in all of the crawled laws (used for creating the header line in the export file)r
     timelineKeys, results = extractTimelineKeysFromCrawledLaws results

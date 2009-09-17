@@ -25,11 +25,13 @@
 class Configuration # and settings
 
   # year in which the crawling starts
+   @@startYear = 1969
   def Configuration.startYear
-    1969
-#   1970      # to temporarily reduce the number of laws to crawl
-#   2003
-#   1954
+    @@startYear
+  end
+  # to temporarily reduce the number of laws to crawl
+  def Configuration.startYear= startYear
+    @@startYear = startYear
   end
   
   # maximum hits per form submit (originally: 99, default: 20)
