@@ -81,14 +81,16 @@ class Saver
       headerRow = {}
       Configuration.fixedCategories.each {|category| headerRow[category] = category}
 
-      # second, add all the timelineTitles (each twice, one with date, another with decision)
+      
+      # second, add all the firstboxKeys
+      firstboxKeys.each { |key| headerRow['firstbox.' + key] = 'firstbox.' + key}
+
+
+      # third, add all the timelineTitles (each twice, one with date, another with decision)
       timelineTitles.each { |title|
         headerRow[title + '.date'] = title + '.date'
         headerRow[title + '.decision'] = title + '.decision'
       }
-
-      # third, add all the firstboxKeys
-      firstboxKeys.each { |key| headerRow['firstbox.' + key] = 'firstbox.' + key}
 
       
       reallyBigTable << headerRow

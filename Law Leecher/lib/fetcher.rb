@@ -115,7 +115,7 @@ class Fetcher
     originalNumberOfLawIDs = lawIDs.size
     #    p lawIDs
     #    lawIDs = lawIDs[0..350]
-    lawIDs = [104668]
+#    lawIDs = []
     
     # array containing all law information
     results = []
@@ -310,7 +310,9 @@ class Fetcher
       timelineKeys.concat timelineKeysUsedInThisLaw
       timelineKeys.uniq!
     } # end of this law
-    
+
+    timelineKeys.sort!
+
     return timelineKeys, results
   end
 
@@ -366,6 +368,7 @@ class Fetcher
       firstboxKeys.uniq!
     } # end of this law
 
+    firstboxKeys.sort!
     return firstboxKeys
   end
 end
