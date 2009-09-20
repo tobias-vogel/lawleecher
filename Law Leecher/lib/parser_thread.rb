@@ -350,25 +350,52 @@ class ParserThread
     # remove the stuff before the first <tr>, immediately
     rows.shift
 
+    # if this table is empty, there is only one <tr> holding the table header
+#    if rows.size == 1
+#      return Configuration.missingEntry, Configuration.missingEntry, Configuration.missingEntry, Configuration.missingEntry
+#    end
+
     documents = Configuration.missingEntry
-    if rows[0][/Documents:/]
-      # there can be several documents, thus: split it
-      #      documents = rows[1].split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
-      documents = rows[1].split /'<BR>/
-      documents.pop
-      documents.shift # remove junk here
-      documents.collect! {|document|
-        parseSimple(/.*<font size=-2>/, /.*(?=<\/font><\/font>\s*(<\/a>)?)/, documents)
+    procedures = Configuration.missingEntry
+    typeOfFile = Configuration.missingEntry
+    numeroCelex = Configuration.missingEntry
+    
+    #TODO das documents von hinten und dieses in eine funktion auslagern
+    rows.each { |row|
+      if row[/Documents:/]
+        # there can be several documents, thus: split it
+        #      documents = rows[1].split /'\)\">\s*<font face=\"Arial\"><font size=-2>/
+        documents = row.split /<BR>/
+        documents.pop
+        #      documents.shift # remove junk here
+        documents.collect! {|document|
+          parseSimple(/.*<font size=-2>/, /.*(?=<\/font><\/font>\s*(<\/a>)?)/, document)
+        }
+
         documents = documents.join Configuration.innerSeparator
-      }
-    end
-    procedures = parseSimple(/Procedures:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[2])
-
-    typeOfFile = parseSimple(/Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[3])
-
-    numeroCelex = parseSimple(/'\)\">\s*<font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font>\s*<\/a>)/, rows[4])
 
 
+        #      documents.collect! {|document|
+        #        parseSimple(/.*<font size=-2>/, /.*(?=<\/font><\/font>\s*(<\/a>)?)/, document)
+        #                    clean(document[/.*(?=<\/font>.*)/])
+        #                 }
+
+
+
+      end
+
+      if row[/Procedures/]
+        procedures = parseSimple(/Procedures:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[2])
+      end
+
+      if row[/Type of file/]
+        typeOfFile = parseSimple(/Type of file:<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font><\/td>\s*<\/tr>)/, rows[3])
+      end
+
+      if row[/NUMERO CELEX/]
+        numeroCelex = parseSimple(/'\)\">\s*<font face=\"Arial\"><font size=-2>/, /.*(?=<\/font><\/font>\s*<\/a>)/, rows[4])
+      end
+    }
     #  ignoreLastBox = lastTable[/Documents.*Procedures.*Type of file.*NUMERO CELEX/m].nil?
     #  arrayEntry['lastbox.Procedures'] = ignoreLastBox ? Configuration.missingEntry : parseSimple(/Procedures:<\/font><\/font><\td>\s*<td VALIGN=TOP><font face=\"Arial\"><font size=-2>/, /.*<\/font><\/font>/)
     #  arrayEntry['lastbox.TypeOfFile'] = Configuration.missingEntry

@@ -115,7 +115,7 @@ class Fetcher
     originalNumberOfLawIDs = lawIDs.size
     #    p lawIDs
     #    lawIDs = lawIDs[0..350]
-    lawIDs = [153545]
+    lawIDs = [104668]
     
     # array containing all law information
     results = []

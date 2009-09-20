@@ -88,7 +88,7 @@ class Saver
       }
 
       # third, add all the firstboxKeys
-      firstboxKeys.each { |key| headerRow['firstbox.' + key] = 'fistbox.' + key}
+      firstboxKeys.each { |key| headerRow['firstbox.' + key] = 'firstbox.' + key}
 
       
       reallyBigTable << headerRow
@@ -170,7 +170,8 @@ class Saver
           line << row[key]
         }
         line = line.join Configuration.columnSeparator
-        file.puts convertUTF8ToANSI(line)
+        convertedLine = convertUTF8ToANSI(line, "x")
+        file.puts convertedLine
       }
       # finally, join all elements together to form a string representation of
       # all the current law's contents which can be saved in the file
@@ -194,6 +195,7 @@ class Saver
     end
   
   rescue Exception => ex
+    puts "Exception: #{ex}"
     return ({'status' => "Datei #{filename} konnte nicht geöffnet werden. Wird sie von einem anderen Programm benutzt?"})
   end
 end
