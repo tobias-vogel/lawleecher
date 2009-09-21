@@ -41,18 +41,18 @@ class ParserThread
 
       # check, whether some specific errors occured
       if @content[/<H1>Database Error<\/H1>/]
-        puts "Law #{@lawID} produced a data base error and thus, is ommitted."
+        puts "Law #{@lawID} is empty. (Produces a data base error)"
         return
       end
 
       if @content[/<H1>Unexpected Error<\/H1>/]
-        puts "Law #{@lawID} produced an \"unexpected error\" and thus, is ommitted."
+        puts "Law #{@lawID} is empty. (Produces an \"unexpected error\")"
         return
       end
 
       # check, whether fields of activity follows events immediately: then, it is empty
       if @content[/<strong>&nbsp;&nbsp;Events:<\/strong><br><br>\s*<table border="0" cellpadding="0" cellspacing="1">\s*<\/table>\s*<\/td>\s*<td width="70%" valign="top">\s*<table BORDER=0 CELLSPACING=0 COLS=2 WIDTH="100%" BGCOLOR="#EEEEEE" >\s*<tr>\s*<td BGCOLOR="#AEFFAE">\s*<center>\s*<font face="Arial,Helvetica" size=-2>Fields of activity:<\/font>/]
-        puts "Law #{@lawID} is empty."
+        puts "Law #{@lawID} is empty. (Contains no values)"
         return
       end
 

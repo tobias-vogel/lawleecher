@@ -78,22 +78,22 @@ class Saver
 
 
       # first, write all categories which are always available (but might be empty)
-      headerRow = {}
-      Configuration.fixedCategories.each {|category| headerRow[category] = category}
+      headerRow = []
+      Configuration.fixedCategories.each {|category| headerRow << category}
 
       
       # second, add all the firstboxKeys
-      firstboxKeys.each { |key| headerRow['firstbox.' + key] = 'firstbox.' + key}
+      firstboxKeys.each { |key| headerRow << 'firstbox.' + key}
 
 
       # third, add all the timelineTitles (each twice, one with date, another with decision)
       timelineTitles.each { |title|
-        headerRow[title + '.date'] = title + '.date'
-        headerRow[title + '.decision'] = title + '.decision'
+        headerRow << title + '.date'
+        headerRow << title + '.decision'
       }
 
       
-      reallyBigTable << headerRow
+#      reallyBigTable << headerRow
 
 
 
@@ -127,7 +127,8 @@ class Saver
         #        end
 
         # second, save all timeline data
-        timelineOfTheCurrentLaw = law['timeline'].each { |step|
+#        timelineOfTheCurrentLaw =
+        law['timeline'].each { |step|
           row[step['titleOfStep'] + '.date'] = step['timestamp']
           row[step['titleOfStep'] + '.decision'] = step['decision']
         }
@@ -156,23 +157,27 @@ class Saver
         # third, save all firstbox data
         firstboxKeys.each { |key|
           row['firstbox.' + key] = law[Configuration::FIRSTBOX][key]
-
           }
 
         reallyBigTable << row
-
       }
 
 
-      # now, save all the stuff
-      #
+
+
+      # now, write everything to file
+      # first: the header row
+      file.puts convertUTF8ToANSI(headerRow.join(Configuration.columnSeparator), 'header row')
+
+
+      # second: all the rest (data rows)
       reallyBigTable.each { |row|
         line = []
-        headerRow.each_key { |key|
+        headerRow.each { |key|
           line << row[key]
         }
         line = line.join Configuration.columnSeparator
-        convertedLine = convertUTF8ToANSI(line, "x")
+        convertedLine = convertUTF8ToANSI(line, row[Configuration::ID])
         file.puts convertedLine
       }
       # finally, join all elements together to form a string representation of

@@ -115,7 +115,7 @@ class Fetcher
     originalNumberOfLawIDs = lawIDs.size
     #    p lawIDs
     #    lawIDs = lawIDs[0..350]
-#    lawIDs = []
+#    lawIDs = [190688]
     
     # array containing all law information
     results = []
@@ -247,10 +247,16 @@ class Fetcher
 
     # extract the keys of the timeline hash in all of the crawled laws (used for creating the header line in the export file)r
     timelineKeys, results = extractTimelineKeysFromCrawledLaws results
+    puts "timelinekeys"
+    puts timelineKeys
+
+
 
     # extract the keys of the first box hash in all of the crawled laws (used for creating the header line in the export file)r
     firstboxKeys = extractfirstboxKeysFromCrawledLaws results
 
+    puts "firstboxkeys"
+    puts firstboxKeys
 
     
 
