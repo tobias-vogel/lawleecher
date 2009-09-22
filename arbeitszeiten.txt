@@ -28,3 +28,4 @@
 17.09.09: 1 stunde test
 20.09.09: 3 stunden bugs
 21.09.09: 4 stunden sortierung der spalten
+22.09.09: 1 stunde code aufräumen

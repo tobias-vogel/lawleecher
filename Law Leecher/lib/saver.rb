@@ -49,15 +49,14 @@ class Saver
       return string
     end
   end
+
+
   
   def save(laws, timelineTitles, firstboxKeys, filename)
     informUser({'status' => "Speichere in #{filename}..."})
 
 
-    p "konvertierungstest"
     laws.each { |law| convertUTF8ToANSI(law.inspect, law[Configuration::ID])}
-
-
 
     begin
       file = File.new(filename, 'w')
@@ -70,12 +69,6 @@ class Saver
       # one table row contains one law, basically flattening its contents
       reallyBigTable = []
       
-      #      p Configuration.fixedCategories
-
-      # write header in file
-      #       Configuration.categories + processStepNames contain all keys of the laws,
-      #       except for metaDuration
-
 
       # first, write all categories which are always available (but might be empty)
       headerRow = []
@@ -92,19 +85,11 @@ class Saver
         headerRow << title + '.decision'
       }
 
-      
-#      reallyBigTable << headerRow
 
 
-
-
-      #      headerline = headerFields.join(Configuration.columnSeparator)
-      #      file.puts convertUTF8ToANSI(((Configuration.categories + processStepNames.sort).join(Configuration.columnSeparator)))
-      #      file.puts convertUTF8ToANSI(headerline)
       # write data in file
 
       # now, create a line in this really big table for each law
-
       laws.each { |law|
 
         # the row, which will be successively filled
@@ -117,47 +102,17 @@ class Saver
           row[category] = law[category]
         }
 
-        #        # second, save duration data
-        #        processStepNames.sort.each do |processStepName|
-        #          if law.key?(processStepName)
-        #            line << law.values_at(processStepName)[0]
-        #          else
-        #            line << ''
-        #          end
-        #        end
 
         # second, save all timeline data
-#        timelineOfTheCurrentLaw =
         law['timeline'].each { |step|
           row[step['titleOfStep'] + '.date'] = step['timestamp']
           row[step['titleOfStep'] + '.decision'] = step['decision']
         }
-=begin
-        timelineTitles.each { |timelineTitle|
-
-          # if the current law has this step (title) in the timeline, add its date and decision
-          # else: add two empty strings
-
-          stepTitleFoundAtIndex = -1
-
-          timelineOfTheCurrentLaw.each_with_index { |step, index| stepTitleFoundAtIndex = index if step['titleOfStep'] == timelineTitle }
-          #          if 0 < timelineOfTheCurrentLaw.count { |step| step['titleOfStep'] == timelineTitle}
-          if stepTitleFoundAtIndex >= 0
-            # this law uses this step, thus: take the data
-            row << timelineOfTheCurrentLaw[stepTitleFoundAtIndex]['timestamp']
-            row << timelineOfTheCurrentLaw[stepTitleFoundAtIndex]['decision']
-          else
-            # this law doesn't use this step, thus: insert two empty strings
-            row << '' # for date
-            row << '' # for decision
-          end
-        }
-=end
 
         # third, save all firstbox data
         firstboxKeys.each { |key|
           row['firstbox.' + key] = law[Configuration::FIRSTBOX][key]
-          }
+        }
 
         reallyBigTable << row
       }
@@ -180,25 +135,8 @@ class Saver
         convertedLine = convertUTF8ToANSI(line, row[Configuration::ID])
         file.puts convertedLine
       }
-      # finally, join all elements together to form a string representation of
-      # all the current law's contents which can be saved in the file
-      #        line = line.join(Configuration.columnSeparator)
-      #        file.puts convertUTF8ToANSI(line)
-
 
       file.close
-
-
-      # do some statistics
-      #      puts "#{laws.size} Gesetz(e) wurden in #{filename} geschrieben."
-
-
-
-      #      sum = 0
-      #      averageDuration = 0
-      #      laws.each {|i| sum += i['MetaDuration']}
-      #      averageDuration = sum / laws.size unless laws.size == 0
-      #      return ({'status' => "Fertig. Gesamtdauer #{(sum / 60).round} Minuten, durchschnittlich #{"%.2f"%averageDuration} Sekunden pro Gesetz"})
     end
   
   rescue Exception => ex

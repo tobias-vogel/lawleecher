@@ -33,8 +33,8 @@
 
 require 'core.rb'
 
-puts 'Year filter is activated. In debug mode?' unless Configuration.startYear == '1969'
-puts "separator falsch" unless Configuration.columnSeparator == '#'
+#puts 'Year filter is activated. In debug mode?' unless Configuration.startYear == '1969'
+#puts "separator falsch" unless Configuration.columnSeparator == '#'
 
 theCore = Core.new
 
@@ -43,35 +43,51 @@ theCore = Core.new
 if (ARGV.member? "--nogui")
   Configuration.guiEnabled = false
 
-  numberOfThreadsFromParams = ARGV.map {|param| param if param[/--numberofthreads=.+/]}.compact
-#  p numberOfThreadsFromParams
-  numberOfThreadsFromParams = numberOfThreadsFromParams.empty? ? -1 : numberOfThreadsFromParams.first.gsub(/--numberofthreads=/, '').to_i
-#    p numberOfThreadsFromParams
-  Configuration.numberOfParserThreads = numberOfThreadsFromParams unless numberOfThreadsFromParams < 0
-#  p Configuration.numberOfParserThreads
+  #  numberOfThreadsFromParams = ARGV.map {|param| param if param[/--numberofthreads=.+/]}.compact
+  #  p numberOfThreadsFromParams
+  #  numberOfThreadsFromParams = numberOfThreadsFromParams.empty? ? -1 : numberOfThreadsFromParams.first.gsub(/--numberofthreads=/, '').to_i
+  #    p numberOfThreadsFromParams
+  #  Configuration.numberOfParserThreads = numberOfThreadsFromParams unless numberOfThreadsFromParams < 0
+  #  p Configuration.numberOfParserThreads
 
-  filenameFromParams = ARGV.map {|param| param if param[/--filename=.+/]}.compact
-#  p filenameFromParams
-  Configuration.filename = filenameFromParams.compact.first.gsub(/--filename=/, '') unless filenameFromParams.empty?
+  #  filenameFromParams = ARGV.map {|param| param if param[/--filename=.+/]}.compact
+  #  p filenameFromParams
+  #  Configuration.filename = filenameFromParams.compact.first.gsub(/--filename=/, '') unless filenameFromParams.empty?
 
-  Configuration.overwritePermission = ARGV.member? '--overwriteexistingfile'
+  #  Configuration.overwritePermission = ARGV.member? '--overwriteexistingfile'
 
-#TODO die anderen parameter hier auch reinnehmen
+  #TODO die anderen parameter hier auch reinnehmen
 
   ARGV.each { |argument|
     case argument
     when /--startyear=.+/
       argument = argument.gsub /--startyear=/, ''
-      Configuration.startYear = argument.to_i unless argument.nil?
+      if argument.nil? or argument.empty? then break end
+      argument = argument.to_i
+      Configuration.startYear = argument if argument > Configuration.startYear and argument <= Time.now.year
+      puts "Start year set to #{Configuration.startYear}"
+
+    when /--numberofthreads=.+/
+      argument = argument.gsub /--numberofthreads=/, ''
+      if argument.nil? or argument.empty? then break end
+      argument = argument.to_i
+      Configuration.numberOfParserThreads = argument if argument >= 1 and argument < 100
+      puts "Number of threads set to #{Configuration.numberOfParserThreads}"
+
+    when /--filename=.+/
+      argument = argument.gsub /--filename=/, ''
+      Configuration.filename = argument unless argument.nil? or argument.empty?
+      puts "Filename set to #{Configuration.filename}"
+      
+    when /--overwriteexistingfile/
+      Configuration.overwritePermission = true
+      puts "Overwrite existing file set to #{Configuration.overwritePermission}"
     end
-
-
-
   }
-#  startYearFromParams = ARGV.map {|param| param if param[/--startyear=.+/]}.compact.first
-#  startYearFromParams.gsub!(/--startyear=/, '').to_i unless startYearFromParams.nil?
-#  Configuration.startYear = startYearFromParams.empty? ? Configuration.startYear : startYearFromParams
-  puts Configuration.startYear
+  #  startYearFromParams = ARGV.map {|param| param if param[/--startyear=.+/]}.compact.first
+  #  startYearFromParams.gsub!(/--startyear=/, '').to_i unless startYearFromParams.nil?
+  #  Configuration.startYear = startYearFromParams.empty? ? Configuration.startYear : startYearFromParams
+  #  puts Configuration.startYear
 
 
   theCore.startProcess

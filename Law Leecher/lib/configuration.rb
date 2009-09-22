@@ -49,8 +49,6 @@ class Configuration # and settings
     ', '
   end
 
-
-
   # the text which is put if a key has no value on the website
   def Configuration.missingEntry
     '[fehlt]'
@@ -74,10 +72,6 @@ class Configuration # and settings
       LASTBOX_NUMEROCELEX,
     ]
   end
-
-#        FIRSTBOX,
-#      TIMELINE
-
 
   # constants for the result hashes
 

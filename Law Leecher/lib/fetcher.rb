@@ -38,65 +38,60 @@ class Fetcher
   def informUser(bunchOfInformation)
     @theCore.callback bunchOfInformation
   end
-  
+
+
+  # gets all the law IDs in the whole database
   def retrieveLawIDs
     #array containing all law ids
     lawIDs = []
     
     informUser({'status' => 'Frage alle Gesetze an. Das kann durchaus mal zwei Minuten oder mehr dauern.'})
+
+    # retrieve all laws separately by year
     (Configuration.startYear..Time.now.year).each { |year|
     
       http = Net::HTTP.start('ec.europa.eu')
     
-      # we will retrieve a 25 MB HTML file, which might take longer
+      # we will retrieve a huge HTML file, which might take longer
       http.read_timeout = 300
       http.open_timeout = 300
 
       puts "Start der Anfrage (#{year})..."
       response = http.post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
-      puts "Antwort angekommen"
       content = response.body
 
 
       # check, whether all hits are on the page
       # there are two ways to check it, we use both for safety reasons
 
-
-
-      #    html = File.new("resultliste_#{startYear}.html", "w")
-      #    html.puts(content)
-      #    html.close
-
-    
-
-      raise 'There are no laws on this page.' if content[/The document is not available in PreLex./]
+      if content[/The document is not available in PreLex./]
+        raise 'There are no laws on this page.'
+      end
 
       lastEntryOnPage = content[/\d{1,5}\/\d{1,5}(?=<\/div>\s*<\/TD>\s*<\/TR>\s*<TR bgcolor=\"#(ffffcc|ffffff)\">\s*<TD colspan=\"2\" VALIGN=\"top\">\s*<FONT CLASS=\"texte\">.*<\/FONT>\s*<\/TD>\s*<\/TR>\s*<\/table>\s*<center>\s*<TABLE border=0 cellpadding=0 cellspacing=0>\s*<tr align=\"center\">\s*<\/tr>\s*<\/table>\s*<\/center>\s*<!-- BOTTOM NAVIGATION BAR)/]
       lastEntry, maxEntries = lastEntryOnPage.split('/')
 
-      # first, compare the last number with the max number (e.g. 46/2110)
+      # first, compare the last number with the max number (e.g., 46/2110)
       # if it's equal, all hits are on this page, which is good, otherwise: bad
-      raise 'Not all laws on page. (last entry != number of entries)' unless lastEntry == maxEntries
+      if lastEntry != maxEntries
+        raise 'Not all laws on page. (last entry != number of entries)'
+      end
 
       # second, the pagination buttons must not be present (at least no "page 2" button)
-      raise 'There are pagination buttons, not all laws would be retrieved.' unless nil === content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/]
+      unless content[/<td align="center"><font size="-2" face="arial, helvetica">2<\/font><br\/>/].nil?
+        raise 'There are pagination buttons, not all laws would be retrieved.'
+      end
 
 
       #fetch out ids for each single law as array and append it to the current set of ids
       #the uniq! removes double ids (<a href="id">id</a>)
       additionalLawIDs = content.scan(/\d{1,6}(?=" title="Click here to reach the detail page of this file">)/)
       additionalLawIDs.uniq! # to eliminate the twin of each law id (which is inevitably included)
-      # remove empty laws
-      #    lawIDs.delete '219546'
-      #    lawIDs.delete '193502'
-      #    lawIDs.delete '192533'
 
       lawIDs.concat additionalLawIDs
-
-
     }
     informUser({'status' => "#{lawIDs.size} Gesetze gefunden"})
-    puts "#{lawIDs.size} Gesetze gefunden"
+    puts "#{lawIDs.size} laws found"
     return lawIDs
   end
   
@@ -110,50 +105,19 @@ class Fetcher
   
   
   
-  
+  # retrieves the details for each law
   def retrieveLawContents(lawIDs)
-    originalNumberOfLawIDs = lawIDs.size
-    #    p lawIDs
-    #    lawIDs = lawIDs[0..350]
-#    lawIDs = [190688]
-    
     # array containing all law information
     results = []
-
-    # counter for the current law (basically for informing the user)
-    #    currentLawCount = 1
-    
-    # flag signalling whether there occured errors during processing
-    thereHaveBeenErrors = false
-    
-    # set of process step names (will be collected to be used for the csv file columns)
-    #    processStepNames = Set.new
-    
-    # the mutex which is needed to synchronicly save the dataset of details a parsed law into the result set
-    #    lock = Monitor.new
 
     # the array in which the threads (references) are stored
     threads = []
 
-    #    puts "ich selbst bin thread:" + Thread.list.inspect
-
-    # large array which will contain all the parsed law details
-    results = []
-
-    vorher = Time.now
-
-    #    erstesMal = true
-    #    lieblingsthread = nil
-
-    while !lawIDs.empty?# or !threads.empty?
-      #      puts "aktuelle threads (#{threads.size} stück):"
-      #      threads.each_index { |index| puts "thread #{index}: status=#{threads[index].status}, alive=#{threads[index].alive?}" }
-      #print "laufende threads: #{Thread.list.size} von #{Configuration.numberOfParserThreads}\n"
-
+    while !lawIDs.empty?
       # iterate over the list of threads and remove those, who have finished
       threads.map! { |thread|
         if !thread.alive?
-          # if thread is finished (= !alive), save the result and replace this thread entry with nil (to delete it, later)
+          # if thread is finished (= !alive), save the result and replace this thread entry with nil (to delete it with the compact! below)
           threadResult = thread.value
           results << threadResult unless threadResult.nil?
           nil
@@ -163,107 +127,40 @@ class Fetcher
         end
       }.compact!
 
-      
-      # don't trust Thread.list.size (formerly used in:  if (Thread.list.size - 1 < Configuration.numberOfParserThreads)
-      # instead: iterate over the threads array and check, whether all are still alive
-      # and purge all dead threads
-      # afterwards, the number of still living threads makes up the number of actually alive threads
-      #wichtig!?      #threads.map! {|thread| thread if thread.alive?}.compact!
-
-
-
-      #      p "#{threads.size} threads laut threads.size"
-
       if (threads.size < Configuration.numberOfParserThreads)
         # start a new thread
-        #        puts "starting a new thread because only #{Thread.list.size - 1} of #{Configuration.numberOfParserThreads} slots are used"
         theLawToProcess = lawIDs.shift
-        #        threads << Thread.new(theLawToProcess) { |lawID|
-        #          parserThread = ParserThread.new lawID, lock, results
-        #          parserThread.retrieveAndParseALaw
-        #        }
-
-        #        puts "hurra, kann einen neuen thread starten!!!!!11"
+ 
         threads << Thread.new {
-          #          p theLawToProcess
           parserThread = ParserThread.new
           parserThread.retrieveAndParseALaw theLawToProcess
-
-          #  2+2
-          #
-          #
-          #
-          #
-          #sleep rand * 10; 2+2
         }
       else
         # do not create a new thread now, instead wait a bit
-        #        puts "currently, all slots are full"
-        #          puts Thread.list.inspect
-        #    puts currentthreadcount if Thread.list.size == 1
-        #Thread.pass
-        #          puts ergebnis.inspect
-        #        puts Thread.list.inspect
         sleep 0.1
       end
-      #      if erstesMal
-      #        lieblingsthread = threads[0]
-      #      end
-      #      erstesMal = false;
-
-      #      p "#{threads.size} threads gibt es laut threads.size"
-      #      1000000.times do
-      #        p lieblingsthread.alive?
-      #      end
-
     end
 
-    #    threads.each {|thread| print "#{thread.alive?} "}
-
-    #    puts results.inspect
 
     # catch all remaining threads here
     puts "no more laws left, waiting for threads to finish"
     threads.each {|thread|
-      #      p "im threadjoin allgemein"
-      #      p thread.alive?
       threadResult = thread.value
       results << threadResult unless threadResult.nil?
-      #      p thread.join
-      #      p thread.alive?
-      #      p thread.value
-      
     }
-
-    p "nicht zu jedem gesetz ist was zurückgekommen" if results.size != originalNumberOfLawIDs
-
-    nachher = Time.now
-
-    puts text = "Dauer bei #{Configuration.numberOfParserThreads} threads: #{nachher - vorher}"
-
-    dump = File.new "#{Time.now.usec}.text", "w"
-    dump.puts text
-    dump.close
 
     # extract the keys of the timeline hash in all of the crawled laws (used for creating the header line in the export file)r
     timelineKeys, results = extractTimelineKeysFromCrawledLaws results
-    puts "timelinekeys"
-    puts timelineKeys
-
-
 
     # extract the keys of the first box hash in all of the crawled laws (used for creating the header line in the export file)r
     firstboxKeys = extractfirstboxKeysFromCrawledLaws results
 
-    puts "firstboxkeys"
-    puts firstboxKeys
-
-    
-
-    return results, timelineKeys, firstboxKeys, thereHaveBeenErrors
+    return results, timelineKeys, firstboxKeys
   end
 
 
+
+  
 
   private
 
@@ -291,8 +188,6 @@ class Fetcher
       timeline = law[Configuration::TIMELINE]
       
       timeline.each { |step|
-        #        p step
-        #        p "---"
         # extract the step's title and introduce the enummeration
         stepTitle = step['titleOfStep'] + '001'
 
@@ -306,7 +201,6 @@ class Fetcher
         # it is saved with the current index and also saved in the array (for that it is being found for later step titles)
         step['titleOfStep'] = stepTitle
         timelineKeysUsedInThisLaw << stepTitle
-        #        p step
       } # end of this step
 
       # save the changed timeline back into the law
@@ -342,34 +236,8 @@ class Fetcher
 
     results.each { |law|
       # this is the temporary storage of timelineKey names ("abc001", ...)
-      #      firstboxKeysUsedInThisLaw = []
       firstboxHash = law[Configuration::FIRSTBOX]
-      #      firstboxKeys.concat firstboxHash.keys
-      #      firstboxKeys.uniq!
-=begin
-      timeline.each { |step|
-#        p step
-#        p "---"
-        # extract the step's title and introduce the enummeration
-        stepTitle = step['titleOfStep'] + '001'
-
-        # this number (001) might have been in use already, if the title did appear before
-        # thus, possibly find the next free index, e.g. 002, 003, 004...
-        while timelineKeysUsedInThisLaw.member? stepTitle
-          stepTitle.next!
-        end
-
-        # now, stepTitle has an index which is unique for this law (because of the law-overall timelineKeysUsedInThisLaw-array)
-        # it is saved with the current index and also saved in the array (for that it is being found for later step titles)
-        step['titleOfStep'] = stepTitle
-        timelineKeysUsedInThisLaw << stepTitle
-#        p step
-      } # end of this step
-
-      # save the changed timeline back into the law
-      law['timeline'] = timeline
-=end
-      # save the used timeline titles in the global list, so that the export file header can make display it
+      # save the used timeline titles in the global list, so that the export file header can display it
       firstboxKeys.concat firstboxHash.keys
       firstboxKeys.uniq!
     } # end of this law

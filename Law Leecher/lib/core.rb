@@ -38,7 +38,7 @@ class Core
     @filename = Configuration.filename
     
     # the law information (array of hash arrays)
-    @laws = Array.new
+    @laws = []
   end
   
   def filename
