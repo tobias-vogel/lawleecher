@@ -138,7 +138,7 @@ class GUI
         Core.createInstance.startProcess
         dialog = Gtk::MessageDialog.new(window,
           Gtk::Dialog::DESTROY_WITH_PARENT,
-          Gtk::MessageDialog::ERROR,
+          Gtk::MessageDialog::INFO,
           Gtk::MessageDialog::BUTTONS_CLOSE,
           "#{Core.createInstance.numberOfLaws} Gesetz(e) wurde(n) gefunden, davon konnte(n) #{Core.createInstance.numberOfLaws - Core.createInstance.numberOfResults} Gesetz(e) nicht gelesen werden."
         )
