@@ -25,35 +25,60 @@
 class Configuration # and settings
 
   # year in which the crawling starts
-   @@startYear = 1969
+  @@startYear = 1969
   def Configuration.startYear
     @@startYear
   end
+
+
+
+
+
   # to temporarily reduce the number of laws to crawl
   def Configuration.startYear= startYear
     @@startYear = startYear
   end
-  
+
+
+
+
+
   # maximum hits per form submit (originally: 99, default: 20)
   def Configuration.numberOfMaxHitsPerPage
     1000000
   end
-  
+
+
+
+
+
   # csv file column separator
   def Configuration.columnSeparator
     '#'
   end
+
+
+
+
 
   # inner separator, e.g. for documents
   def Configuration.innerSeparator
     ', '
   end
 
+
+
+
+
   # the text which is put if a key has no value on the website
   def Configuration.missingEntry
     '[fehlt]'
   end
-  
+
+
+
+
+
   # categories to crawl
   def Configuration.fixedCategories
     [
@@ -73,8 +98,11 @@ class Configuration # and settings
     ]
   end
 
-  # constants for the result hashes
 
+
+
+
+  # constants for the result hashes
   TYPE = 'Type'
   BLUEBOX_UPPERLEFTIDENTIFIER = 'bluebox.UpperLeftIdentifier'
   BLUEBOX_UPPERCENTERIDENTIFIER = 'bluebox.UpperCenterIdentifier'
@@ -89,11 +117,13 @@ class Configuration # and settings
   LASTBOX_PROCEDURES = 'lastbox.Procedures'
   LASTBOX_TYPEOFFILE = 'lastbox.TypeOfFile'
   LASTBOX_NUMEROCELEX = 'lastbox.NumeroCelex'
-  OJCONSEIL = 'ojConceil'
   ID = 'ID'
 
-  
-  # file name of the export
+
+
+
+
+  # filename of the export
   @@filename = "#{Dir.pwd}/export.csv"
   def Configuration.filename
     @@filename
@@ -101,11 +131,19 @@ class Configuration # and settings
   def Configuration.filename= filename
     @@filename = filename
   end
-  
+
+
+
+
+
   # version of the program
   def Configuration.version
     '1.2'
   end
+
+
+
+
 
   # number of parser threads to use
   @@numberOfParserThreads = 10
@@ -116,6 +154,10 @@ class Configuration # and settings
     @@numberOfParserThreads = numberOfParserThreads
   end
 
+
+
+
+
   # flag to overwrite the output file if it is existing already
   @@overwritePermission = false
   def Configuration.overwritePermission
@@ -124,6 +166,10 @@ class Configuration # and settings
   def Configuration.overwritePermission= overwritePermission
     @@overwritePermission = overwritePermission
   end
+
+
+
+
 
   # flag whether or not to use the GUI
   @@guiEnabled = true

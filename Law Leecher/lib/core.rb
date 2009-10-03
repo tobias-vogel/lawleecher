@@ -41,32 +41,7 @@ class Core
 
 
 
-  def initialize
-    #    @theFetcher = Fetcher.new#(self) #brauch ich nicht
-    #    @theSaver = Saver.new(self)
-
-    # this list contains all keys for the process steps found
-    #    @processStepNames = []
-
-    # name of the export file
-    #    @filename = Configuration.filename
-
-    # the law information (array of hash arrays)
-    #    @laws = []
-  end
-
-  #  def filename
-  #    @filename
-  #  end
-
-  #  def filename=(filename)
-  #    @filename = filename
-  #  end
-
-  #  def addGuiPointer(theGui)
-  #    @theGui = theGui
-  #  end
-
+  # the main method, controlling the whole extraction process
   def startProcess
     lawIDs = Fetcher.retrieveLawIDs()
 
@@ -75,20 +50,14 @@ class Core
     laws, timelineTitles, firstboxKeys = Fetcher.retrieveLawContents(lawIDs)
 
     @@numberOfResults = laws.size
-    
+
     Saver.save laws, timelineTitles, firstboxKeys
-
-
-    #    if errors
-    #      info['status'] << ' There have been errors.' if info.has_key? 'status'
-    #    end
-
-    #    callback({'status' =>
   end
 
 
 
-  
+
+
   # callback to the gui and/or the terminal
   def callback bunchOfInformation
     puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
@@ -96,19 +65,20 @@ class Core
   end
 
 
+
+
+
+  # getter for the number of laws variable
   def numberOfLaws
     @@numberOfLaws
   end
 
+
+
+
+
+  # getter for the number of results variable
   def numberOfResults
     @@numberOfResults
   end
-
-  #  def readyToStart?(overWritingPermitted)
-  #    if @theSaver.fileExists? @filename and !overWritingPermitted
-  #      return false
-  #    else
-  #      return true
-  #    end
-  #  end
 end

@@ -25,20 +25,11 @@
 require 'iconv'
 
 class Saver
-  
-#  def initialize(theCore)
-#    @theCore = theCore
-#  end
-  
-  
-#  def fileExists?(filename)
-#    File.exists? filename
-#  end
-  
- 
+
+  # converts a string from UTF8 to ANSI
   def Saver.convertUTF8ToANSI string, law
     begin
-      Iconv.new('iso-8859-1', 'utf-8').iconv(string)  
+      Iconv.new('iso-8859-1', 'utf-8').iconv(string)
     rescue Iconv::IllegalSequence => is
       puts "law ##{law}: Unicode character conversion error: #{is.message}"
       puts "Writing it inconverted"
@@ -47,14 +38,16 @@ class Saver
   end
 
 
-  
+
+
+
+  # saves the results into a file
   def Saver.save laws, timelineTitles, firstboxKeys
     Core.createInstance.callback({'status' => "Speichere in #{Configuration.filename}..."})
 
 
-    #warum?
-    ## evtl: to see all conversation errors, uncomment the following line
-#    laws.each { |law| convertUTF8ToANSI(law.inspect, law[Configuration::ID])}
+    # to see all conversation errors, uncomment the following line
+    # laws.each { |law| convertUTF8ToANSI(law.inspect, law[Configuration::ID])}
 
     begin
       file = File.new(Configuration.filename, 'w')
@@ -66,13 +59,13 @@ class Saver
       # this table is then serialized in the file
       # one table row contains one law, basically flattening its contents
       reallyBigTable = []
-      
+
 
       # first, write all categories which are always available (but might be empty)
       headerRow = []
       Configuration.fixedCategories.each {|category| headerRow << category}
 
-      
+
       # second, add all the firstboxKeys
       firstboxKeys.each { |key| headerRow << 'firstbox.' + key}
 
@@ -95,7 +88,7 @@ class Saver
 
         # first, save fixed category data, since it is reliably present at all laws (but maybe with empty strings)
         Configuration.fixedCategories.each { |category|
-          
+
           # category contains the current key like "legal basis" or "primarily responsible"
           row[category] = law[category]
         }
@@ -136,7 +129,7 @@ class Saver
 
       file.close
     end
-  
+
   rescue Exception => ex
     puts "Exception: #{ex}"
     Core.createInstance.callback({'status' => "Datei #{Configuration.filename} konnte nicht geöffnet werden. Wird sie von einem anderen Programm benutzt?"})

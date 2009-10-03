@@ -27,17 +27,9 @@
 # - there are more than 10000 laws per type
 # - entries contain a # in the text
 
-
-#TODO remove trailing spaces auf allen dateien und nach # suchen und vielleicht was danach löschen
-
 require 'core.rb'
 
-#puts 'Year filter is activated. In debug mode?' unless Configuration.startYear == '1969'
-#puts "separator falsch" unless Configuration.columnSeparator == '#'
-
 theCore = Core.createInstance
-#theCore = Core.new
-
 
 # first, determine, whether we want to have a GUI
 if (ARGV.member? "--nogui")
@@ -63,7 +55,7 @@ if (ARGV.member? "--nogui")
       argument = argument.gsub /--filename=/, ''
       Configuration.filename = argument unless argument.nil? or argument.empty?
       puts "Filename set to #{Configuration.filename}"
-      
+
     when /--overwriteexistingfile/
       Configuration.overwritePermission = true
       puts "Overwrite existing file set to #{Configuration.overwritePermission}"
@@ -85,10 +77,7 @@ else
   puts 'System starts in GUI mode. Command line parameters are ignored.'
   require 'g_u_i.rb'
 
-  #TODO: das wieder rausnehmen
-  Configuration.startYear=2009
   gui = GUI.createInstance
-#  theCore.addGuiPointer gui
 
   begin
     gui.run

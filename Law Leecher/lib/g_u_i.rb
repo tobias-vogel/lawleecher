@@ -36,9 +36,12 @@ class GUI
   end
 
 
-  
+
+
+
+  # create all the widgets of the window, connect signals and display everything
   def initialize
-    
+
     window = Gtk::Window.new("Law Leecher #{Configuration.version}")
     window.set_border_width 10
     window.set_default_size 1, 1
@@ -53,14 +56,14 @@ class GUI
 
     fileChooserTextLabel = Gtk::Label.new('Dateiname')
     fileNameEntry = Gtk::Entry.new()
-    fileNameEntry.set_text Configuration.filename #@theCore.filename
+    fileNameEntry.set_text Configuration.filename
     fileNameEntry.set_size_request 400, 20
     fileChooserButton = Gtk::Button.new('Durchsuchen...')
 
 
     overWriteButton = Gtk::ToggleButton.new()
     overWriteButtonLabel = Gtk::Label.new('Vorhandene Datei ggfs. überschreiben')
-    
+
 
     startButton = Gtk::Button.new('Start')
 
@@ -93,7 +96,7 @@ class GUI
       fileChooser.show_all
       fileChooser.ok_button.signal_connect('clicked') do
         Configuration.filename = fileNameEntry.text = fileChooser.filename
-            
+
         fileChooser.destroy
       end
 
@@ -110,10 +113,8 @@ class GUI
     overWriteButton.signal_connect('clicked') {
       Configuration.overwritePermission = overWriteButton.active?
     }
-    
-    startButton.signal_connect('clicked') {
-      # TODO das hier direkt hier machen (ist ja alles da)
 
+    startButton.signal_connect('clicked') {
       if File.exists?(Configuration.filename) and !Configuration.overwritePermission
         dialog = Gtk::MessageDialog.new(window,
           Gtk::Dialog::DESTROY_WITH_PARENT,
@@ -124,8 +125,6 @@ class GUI
         dialog.run
         dialog.destroy
       else
-        #        @theCore.readyToStart?(overWriteButton.active?)
-        
         updateWidgets({'progressBarText' => '', 'status' => ''})
         @progressBar.set_fraction 0
         startButton.set_sensitive false
@@ -167,7 +166,7 @@ class GUI
 
     table.attach(overWriteButton, 1, 2, 1, 2, 0, 0, 0, 0)
     table.attach(overWriteButtonLabel, 1, 5, 1, 2, 0, 0, 0, 0)
-    
+
     table.attach(startButton, 0, 1, 2, 3, Gtk::FILL, 0, 0, 0)
     table.attach(@progressBar, 1, 6, 2, 3, Gtk::FILL, 0, 0, 0)
 
@@ -175,12 +174,21 @@ class GUI
 
     window.show_all
   end
-  
-  
+
+
+
+
+
+  # GTK main loop
   def run
     Gtk.main
   end
-  
+
+
+
+
+
+  # function that is called from time to time to update status and progress bar
   def updateWidgets info
     @progressBar.text = info['progressBarText'] if info.has_key? 'progressBarText'
     @progressBar.set_fraction([@progressBar.fraction + info['progressBarIncrement'], 1].min) if info.has_key? 'progressBarIncrement'

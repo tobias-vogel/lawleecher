@@ -21,7 +21,6 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#TODO heapsize und so jedenfalls für java ändern (in doku schreiben)
 require 'net/http'
 require 'set'
 require 'configuration.rb'
@@ -30,12 +29,6 @@ require 'monitor'
 require 'parser_thread.rb'
 
 class Fetcher
-
-  #  def initialize(theCore)
-  #    @theCore = theCore
-  #  end
-
-
 
   # gets all the law IDs in the whole database
   def Fetcher.retrieveLawIDs
@@ -54,7 +47,6 @@ class Fetcher
       http.open_timeout = 300
 
       Core.createInstance.callback({'status' => "Emfange Gesetze aus dem Jahr #{year}..."})
-#      puts "Start der Anfrage (#{year})..."
       response = http.post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
       content = response.body
 
@@ -89,9 +81,6 @@ class Fetcher
       lawIDs.concat additionalLawIDs
     }
     Core.createInstance.callback({'status' => "#{lawIDs.size} Gesetze gefunden"})
-
-
-    #    puts "#{lawIDs.size} laws found"
     return lawIDs
   end
 
@@ -99,13 +88,7 @@ class Fetcher
 
 
 
-
-
-
-
-
-
-  # retrieves the details for each law
+  # retrieves the details for each law by startin threads for each law
   def Fetcher.retrieveLawContents lawIDs
     # total number of laws to retrieve
     overalNumberOfLaws = lawIDs.size
@@ -113,7 +96,7 @@ class Fetcher
     # contribution of each law to the progess bar
     # is irrelevant when not in GUI mode
     progressBarIncrement = 1.0 / overalNumberOfLaws
-    
+
     # array containing all law information
     results = []
 
@@ -223,6 +206,9 @@ class Fetcher
 
     return timelineKeys, results
   end
+
+
+
 
 
   # finds out all keys of the firstbox (e.g. "Mandatory consultation", "Responsible")

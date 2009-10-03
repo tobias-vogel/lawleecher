@@ -23,6 +23,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class ParserThread
+
+  # does the overall parsing task
   def retrieveAndParseALaw lawID
     @lawID = lawID
     begin # start try block
@@ -78,22 +80,10 @@ class ParserThread
 
       # first box items (whatever is in there)
       arrayEntry[Configuration::FIRSTBOX] = processFirstBox allTables.first
-      #arrayEntry['firstbox.PrimarilyResponsible'] = parseSimple(/Primarily responsible<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/tr>)/, @content)
 
       # last box items (if available)
       arrayEntry[Configuration::LASTBOX_DOCUMENTS], arrayEntry[Configuration::LASTBOX_PROCEDURES], arrayEntry[Configuration::LASTBOX_TYPEOFFILE], arrayEntry[Configuration::LASTBOX_NUMEROCELEX] = processLastBox allTables.last
 
-      # OJ Conseil
-      # extract "OJ Conseil" from "adoption common position" table
-      ojConseil = Configuration.missingEntry
-      allTables.each { |table|
-        if table[/Adoption common position/]
-          ojConseil = parseSimple(/OJ CONSEIL<\/font><\/font><\/td>\s*<td VALIGN=TOP><font face="Arial"><font size=-2>/, /.*?(?=<\/font><\/font><\/td>\s*<\/tr>)/, table)
-          break
-        end
-      }
-      arrayEntry[Configuration::OJCONSEIL] = ojConseil
-      
       arrayEntry[Configuration::ID] = @lawID
 
     rescue Exception => ex
@@ -114,11 +104,11 @@ class ParserThread
     end #of exception handling
 
     return arrayEntry
-  end 
+  end
 
 
 
-  
+
 
   private
 
@@ -161,6 +151,9 @@ class ParserThread
 
 
 
+
+
+  # process the last table of the many piled up tables in the center of the page
   def processLastBox lastTable
     rows = lastTable.split(/(?=<tr>)/)
     # remove the stuff before the first <tr>, immediately
@@ -172,8 +165,7 @@ class ParserThread
     procedures = Configuration.missingEntry
     typeOfFile = Configuration.missingEntry
     numeroCelex = Configuration.missingEntry
-    
-    #TODO das documents von hinten und dieses in eine funktion auslagern
+
     rows.each { |row|
       if row[/Documents:/]
         # there can be several documents, thus: split it
@@ -204,6 +196,7 @@ class ParserThread
 
 
 
+
   # removes whitespaces and HTML tags from a given string
   # maintains single word spacing blanks
   def clean(string)
@@ -229,6 +222,8 @@ class ParserThread
 
 
 
+
+
   # fetches HTTP requests which use redirects
   def fetch(uri_str, limit = 10)
     # You should choose better exception.
@@ -243,6 +238,11 @@ class ParserThread
     end
   end
 
+
+
+
+
+  # retrieves the law type's abbreviation
   def parseLawType
     # find out the law type
     begin
@@ -255,6 +255,7 @@ class ParserThread
     end
     return type
   end
+
 
 
 
@@ -292,7 +293,10 @@ class ParserThread
   end
 
 
-  
+
+
+
+  # parses the first table of the many piled up tables in the center of the page
   def processFirstBox table
     tableData = {}
     rows = table.split(/(?=<tr>)/)
