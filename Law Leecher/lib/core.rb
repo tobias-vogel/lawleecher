@@ -42,63 +42,73 @@ class Core
 
 
   def initialize
-#    @theFetcher = Fetcher.new#(self) #brauch ich nicht
-#    @theSaver = Saver.new(self)
+    #    @theFetcher = Fetcher.new#(self) #brauch ich nicht
+    #    @theSaver = Saver.new(self)
 
     # this list contains all keys for the process steps found
-#    @processStepNames = []
+    #    @processStepNames = []
 
     # name of the export file
-#    @filename = Configuration.filename
+    #    @filename = Configuration.filename
 
     # the law information (array of hash arrays)
-#    @laws = []
+    #    @laws = []
   end
 
-#  def filename
-#    @filename
-#  end
+  #  def filename
+  #    @filename
+  #  end
 
-#  def filename=(filename)
-#    @filename = filename
-#  end
+  #  def filename=(filename)
+  #    @filename = filename
+  #  end
 
-#  def addGuiPointer(theGui)
-#    @theGui = theGui
-#  end
+  #  def addGuiPointer(theGui)
+  #    @theGui = theGui
+  #  end
 
   def startProcess
     lawIDs = Fetcher.retrieveLawIDs()
 
+    @@numberOfLaws = lawIDs.size
+
     laws, timelineTitles, firstboxKeys = Fetcher.retrieveLawContents(lawIDs)
 
+    @@numberOfResults = laws.size
+    
     Saver.save laws, timelineTitles, firstboxKeys
 
-#    if errors
-#      info['status'] << ' There have been errors.' if info.has_key? 'status'
-#    end
 
-#    callback(info)
+    #    if errors
+    #      info['status'] << ' There have been errors.' if info.has_key? 'status'
+    #    end
 
+    #    callback({'status' =>
   end
 
 
 
   
   # callback to the gui and/or the terminal
-  def callback(bunchOfInformation)
+  def callback bunchOfInformation
     puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
-    @theGui.updateWidgets(bunchOfInformation) if Configuration.guiEnabled
+    GUI.createInstance.updateWidgets(bunchOfInformation) if Configuration.guiEnabled
   end
 
 
+  def numberOfLaws
+    @@numberOfLaws
+  end
 
+  def numberOfResults
+    @@numberOfResults
+  end
 
-#  def readyToStart?(overWritingPermitted)
-#    if @theSaver.fileExists? @filename and !overWritingPermitted
-#      return false
-#    else
-#      return true
-#    end
-#  end
+  #  def readyToStart?(overWritingPermitted)
+  #    if @theSaver.fileExists? @filename and !overWritingPermitted
+  #      return false
+  #    else
+  #      return true
+  #    end
+  #  end
 end

@@ -84,7 +84,10 @@ if (ARGV.member? "--nogui")
 else
   puts 'System starts in GUI mode. Command line parameters are ignored.'
   require 'g_u_i.rb'
-  gui = GUI.new#(theCore)
+
+  #TODO: das wieder rausnehmen
+  Configuration.startYear=2009
+  gui = GUI.createInstance
 #  theCore.addGuiPointer gui
 
   begin

@@ -53,7 +53,8 @@ class Fetcher
       http.read_timeout = 300
       http.open_timeout = 300
 
-      puts "Start der Anfrage (#{year})..."
+      Core.createInstance.callback({'status' => "Emfange Gesetze aus dem Jahr #{year}..."})
+#      puts "Start der Anfrage (#{year})..."
       response = http.post('/prelex/liste_resultats.cfm?CL=en', "doc_typ=&docdos=dos&requete_id=0&clef1=&doc_ann=&doc_num=&doc_ext=&clef4=&clef2=#{year}&clef3=&LNG_TITRE=EN&titre=&titre_boolean=&EVT1=&GROUPE1=&EVT1_DD_1=&EVT1_MM_1=&EVT1_YY_1=&EVT1_DD_2=&EVT1_MM_2=&EVT1_YY_2=&event_boolean=+and+&EVT2=&GROUPE2=&EVT2_DD_1=&EVT2_MM_1=&EVT2_YY_1=&EVT2_DD_2=&EVT2_MM_2=&EVT2_YY_2=&EVT3=&GROUPE3=&EVT3_DD_1=&EVT3_MM_1=&EVT3_YY_1=&EVT3_DD_2=&EVT3_MM_2=&EVT3_YY_2=&TYPE_DOSSIER=&NUM_CELEX_TYPE=&NUM_CELEX_YEAR=&NUM_CELEX_NUM=&BASE_JUR=&DOMAINE1=&domain_boolean=+and+&DOMAINE2=&COLLECT1=&COLLECT1_ROLE=&collect_boolean=+and+&COLLECT2=&COLLECT2_ROLE=&PERSON1=&PERSON1_ROLE=&person_boolean=+and+&PERSON2=&PERSON2_ROLE=&nbr_element=#{Configuration.numberOfMaxHitsPerPage.to_s}&first_element=1&type_affichage=1")
       content = response.body
 
@@ -105,7 +106,14 @@ class Fetcher
 
 
   # retrieves the details for each law
-  def Fetcher.retrieveLawContents(lawIDs)
+  def Fetcher.retrieveLawContents lawIDs
+    # total number of laws to retrieve
+    overalNumberOfLaws = lawIDs.size
+
+    # contribution of each law to the progess bar
+    # is irrelevant when not in GUI mode
+    progressBarIncrement = 1.0 / overalNumberOfLaws
+    
     # array containing all law information
     results = []
 
@@ -134,6 +142,7 @@ class Fetcher
           parserThread = ParserThread.new
           parserThread.retrieveAndParseALaw theLawToProcess
         }
+        Core.createInstance.callback({'progressBarIncrement' => progressBarIncrement, 'progressBarText' => "#{overalNumberOfLaws - lawIDs.size}/#{overalNumberOfLaws} Gesetze verarbeitet"})
       else
         # do not create a new thread now, instead wait a bit
         sleep 0.1

@@ -36,7 +36,7 @@ class Saver
 #  end
   
  
-  def Saver.convertUTF8ToANSI(string, law)
+  def Saver.convertUTF8ToANSI string, law
     begin
       Iconv.new('iso-8859-1', 'utf-8').iconv(string)  
     rescue Iconv::IllegalSequence => is
