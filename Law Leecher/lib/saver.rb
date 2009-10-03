@@ -26,21 +26,17 @@ require 'iconv'
 
 class Saver
   
-  def initialize(theCore)
-    @theCore = theCore
-  end
+#  def initialize(theCore)
+#    @theCore = theCore
+#  end
   
   
-  def fileExists?(filename)
-    File.exists? filename
-  end
+#  def fileExists?(filename)
+#    File.exists? filename
+#  end
   
-  
-  def informUser(bunchOfInformation)
-    @theCore.callback bunchOfInformation
-  end
-
-  def convertUTF8ToANSI(string, law)
+ 
+  def Saver.convertUTF8ToANSI(string, law)
     begin
       Iconv.new('iso-8859-1', 'utf-8').iconv(string)  
     rescue Iconv::IllegalSequence => is
@@ -52,14 +48,16 @@ class Saver
 
 
   
-  def save(laws, timelineTitles, firstboxKeys, filename)
-    informUser({'status' => "Speichere in #{filename}..."})
+  def Saver.save laws, timelineTitles, firstboxKeys
+    Core.createInstance.callback({'status' => "Speichere in #{Configuration.filename}..."})
 
 
-    laws.each { |law| convertUTF8ToANSI(law.inspect, law[Configuration::ID])}
+    #warum?
+    ## evtl: to see all conversation errors, uncomment the following line
+#    laws.each { |law| convertUTF8ToANSI(law.inspect, law[Configuration::ID])}
 
     begin
-      file = File.new(filename, 'w')
+      file = File.new(Configuration.filename, 'w')
 
       # basically, two things are done here:
       # first, the title line is composed of several array (fixed parts, variable ones)
@@ -141,6 +139,6 @@ class Saver
   
   rescue Exception => ex
     puts "Exception: #{ex}"
-    return ({'status' => "Datei #{filename} konnte nicht geöffnet werden. Wird sie von einem anderen Programm benutzt?"})
+    Core.createInstance.callback({'status' => "Datei #{Configuration.filename} konnte nicht geöffnet werden. Wird sie von einem anderen Programm benutzt?"})
   end
 end

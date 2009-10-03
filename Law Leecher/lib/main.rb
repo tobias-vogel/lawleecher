@@ -25,38 +25,23 @@
 # the programm returns wrong or no information, if
 # - the website was changed
 # - there are more than 10000 laws per type
-# - there are laws which started before 1.1.1960 or which end after 23.12.2069
-#   or which end after 23.12.2059 if they started between 1.1.1960 1.1.1070
 # - entries contain a # in the text
 
-#TODO für die doku einen screenshot machen und die teile bezeichnen
+
+#TODO remove trailing spaces auf allen dateien und nach # suchen und vielleicht was danach löschen
 
 require 'core.rb'
 
 #puts 'Year filter is activated. In debug mode?' unless Configuration.startYear == '1969'
 #puts "separator falsch" unless Configuration.columnSeparator == '#'
 
-theCore = Core.new
+theCore = Core.createInstance
+#theCore = Core.new
 
 
-# first, determine, whether we want to have a gui
+# first, determine, whether we want to have a GUI
 if (ARGV.member? "--nogui")
   Configuration.guiEnabled = false
-
-  #  numberOfThreadsFromParams = ARGV.map {|param| param if param[/--numberofthreads=.+/]}.compact
-  #  p numberOfThreadsFromParams
-  #  numberOfThreadsFromParams = numberOfThreadsFromParams.empty? ? -1 : numberOfThreadsFromParams.first.gsub(/--numberofthreads=/, '').to_i
-  #    p numberOfThreadsFromParams
-  #  Configuration.numberOfParserThreads = numberOfThreadsFromParams unless numberOfThreadsFromParams < 0
-  #  p Configuration.numberOfParserThreads
-
-  #  filenameFromParams = ARGV.map {|param| param if param[/--filename=.+/]}.compact
-  #  p filenameFromParams
-  #  Configuration.filename = filenameFromParams.compact.first.gsub(/--filename=/, '') unless filenameFromParams.empty?
-
-  #  Configuration.overwritePermission = ARGV.member? '--overwriteexistingfile'
-
-  #TODO die anderen parameter hier auch reinnehmen
 
   ARGV.each { |argument|
     case argument
@@ -82,19 +67,25 @@ if (ARGV.member? "--nogui")
     when /--overwriteexistingfile/
       Configuration.overwritePermission = true
       puts "Overwrite existing file set to #{Configuration.overwritePermission}"
+
+    when /--nogui/
+      # this parameter is OK, but leave it here for readability
+
+    else
+      puts "Unknown command line parameter: \"#{argument}\". Exiting."
+      exit
     end
   }
-  #  startYearFromParams = ARGV.map {|param| param if param[/--startyear=.+/]}.compact.first
-  #  startYearFromParams.gsub!(/--startyear=/, '').to_i unless startYearFromParams.nil?
-  #  Configuration.startYear = startYearFromParams.empty? ? Configuration.startYear : startYearFromParams
-  #  puts Configuration.startYear
-
 
   theCore.startProcess
+
+
+
 else
+  puts 'System starts in GUI mode. Command line parameters are ignored.'
   require 'g_u_i.rb'
-  gui = GUI.new(theCore)
-  theCore.addGuiPointer gui
+  gui = GUI.new#(theCore)
+#  theCore.addGuiPointer gui
 
   begin
     gui.run

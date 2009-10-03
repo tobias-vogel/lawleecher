@@ -97,6 +97,7 @@ class GUI
     
     
     startButton.signal_connect('clicked') {
+      # TODO das hier direkt hier machen (ist ja alles da)
       if @theCore.readyToStart?(overWriteButton.active?)
         updateWidgets({'progressBarText' => '', 'status' => ''})
         @progressBar.set_fraction 0

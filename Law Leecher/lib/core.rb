@@ -26,59 +26,79 @@ require 'fetcher.rb'
 require 'saver.rb'
 
 class Core
-  
-  def initialize
-    @theFetcher = Fetcher.new(self)
-    @theSaver = Saver.new(self)
-    
-    # this list contains all keys for the process steps found
-    @processStepNames = []
-    
-    # name of the export file
-    @filename = Configuration.filename
-    
-    # the law information (array of hash arrays)
-    @laws = []
-  end
-  
-  def filename
-    @filename
-  end
-  
-  def filename=(filename)
-    @filename = filename
+
+  # Core is a singleton
+  # this avoids having to provide the pointer to the core everywhere
+  private_class_method :new
+  @@singleton = nil
+
+  def Core.createInstance
+    @@singleton = new unless @@singleton
+    @@singleton
   end
 
-  def addGuiPointer(theGui)
-    @theGui = theGui
+
+
+
+
+  def initialize
+#    @theFetcher = Fetcher.new#(self) #brauch ich nicht
+#    @theSaver = Saver.new(self)
+
+    # this list contains all keys for the process steps found
+#    @processStepNames = []
+
+    # name of the export file
+#    @filename = Configuration.filename
+
+    # the law information (array of hash arrays)
+#    @laws = []
   end
+
+#  def filename
+#    @filename
+#  end
+
+#  def filename=(filename)
+#    @filename = filename
+#  end
+
+#  def addGuiPointer(theGui)
+#    @theGui = theGui
+#  end
 
   def startProcess
-    lawIDs = @theFetcher.retrieveLawIDs()
-    
-    @laws, @timelineTitles, firstboxKeys, errors = @theFetcher.retrieveLawContents(lawIDs)
-    
-    info = @theSaver.save @laws, @timelineTitles, firstboxKeys, @filename
-    
-    if errors
-      info['status'] << ' There have been errors.' if info.has_key? 'status'
-    end
-    
-    callback(info)
-    
+    lawIDs = Fetcher.retrieveLawIDs()
+
+    laws, timelineTitles, firstboxKeys = Fetcher.retrieveLawContents(lawIDs)
+
+    Saver.save laws, timelineTitles, firstboxKeys
+
+#    if errors
+#      info['status'] << ' There have been errors.' if info.has_key? 'status'
+#    end
+
+#    callback(info)
+
   end
+
+
+
   
-  # callback to the gui
+  # callback to the gui and/or the terminal
   def callback(bunchOfInformation)
-#    puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
-#    @theGui.updateWidgets(bunchOfInformation) if Configuration.guiEnabled
+    puts bunchOfInformation['status'] if bunchOfInformation.has_key?('status')
+    @theGui.updateWidgets(bunchOfInformation) if Configuration.guiEnabled
   end
-  
-  def readyToStart?(overWritingPermitted)
-    if @theSaver.fileExists? @filename and !overWritingPermitted
-      return false
-    else
-      return true
-    end
-  end
+
+
+
+
+#  def readyToStart?(overWritingPermitted)
+#    if @theSaver.fileExists? @filename and !overWritingPermitted
+#      return false
+#    else
+#      return true
+#    end
+#  end
 end

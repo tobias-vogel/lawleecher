@@ -30,28 +30,25 @@ require 'monitor'
 require 'parser_thread.rb'
 
 class Fetcher
-  
-  def initialize(theCore)
-    @theCore = theCore
-  end
-  
-  def informUser(bunchOfInformation)
-    @theCore.callback bunchOfInformation
-  end
+
+  #  def initialize(theCore)
+  #    @theCore = theCore
+  #  end
+
 
 
   # gets all the law IDs in the whole database
-  def retrieveLawIDs
+  def Fetcher.retrieveLawIDs
     #array containing all law ids
     lawIDs = []
-    
-    informUser({'status' => 'Frage alle Gesetze an. Das kann durchaus mal zwei Minuten oder mehr dauern.'})
+
+    Core.createInstance.callback({'status' => 'Frage alle Gesetze an. Das kann durchaus mal zwei Minuten oder mehr dauern.'})
 
     # retrieve all laws separately by year
     (Configuration.startYear..Time.now.year).each { |year|
-    
+
       http = Net::HTTP.start('ec.europa.eu')
-    
+
       # we will retrieve a huge HTML file, which might take longer
       http.read_timeout = 300
       http.open_timeout = 300
@@ -90,23 +87,25 @@ class Fetcher
 
       lawIDs.concat additionalLawIDs
     }
-    informUser({'status' => "#{lawIDs.size} Gesetze gefunden"})
-    puts "#{lawIDs.size} laws found"
+    Core.createInstance.callback({'status' => "#{lawIDs.size} Gesetze gefunden"})
+
+
+    #    puts "#{lawIDs.size} laws found"
     return lawIDs
   end
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
   # retrieves the details for each law
-  def retrieveLawContents(lawIDs)
+  def Fetcher.retrieveLawContents(lawIDs)
     # array containing all law information
     results = []
 
@@ -130,7 +129,7 @@ class Fetcher
       if (threads.size < Configuration.numberOfParserThreads)
         # start a new thread
         theLawToProcess = lawIDs.shift
- 
+
         threads << Thread.new {
           parserThread = ParserThread.new
           parserThread.retrieveAndParseALaw theLawToProcess
@@ -160,7 +159,7 @@ class Fetcher
 
 
 
-  
+
 
   private
 
@@ -170,7 +169,7 @@ class Fetcher
   # input are laws, which are hashes with a key named "timeline", this entry is an array of hashes
   # each of these hashes has three entries of which one is named titleOfStep
   # this is the string of relevance, here, called the "timeline key"
-  def extractTimelineKeysFromCrawledLaws results
+  def Fetcher.extractTimelineKeysFromCrawledLaws results
     timelineKeys = []
 
     # go through each law and examine the set of keys in the timeline array
@@ -186,7 +185,7 @@ class Fetcher
       # this is the temporary storage of timelineKey names ("abc001", ...)
       timelineKeysUsedInThisLaw = []
       timeline = law[Configuration::TIMELINE]
-      
+
       timeline.each { |step|
         # extract the step's title and introduce the enummeration
         stepTitle = step['titleOfStep'] + '001'
@@ -222,7 +221,7 @@ class Fetcher
   # it is unclear, which ones can occur
   # input are laws, which are hashes with a key named "firstbox", this entry is an array of hashes
   # each of these hashes has only one entry, the key mapped to the value
-  def extractfirstboxKeysFromCrawledLaws results
+  def Fetcher.extractfirstboxKeysFromCrawledLaws results
     firstboxKeys = []
 
     # go through each law and examine the set of keys in the timeline array
