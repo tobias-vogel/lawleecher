@@ -146,7 +146,7 @@ class Configuration # and settings
 
 
   # number of parser threads to use
-  @@numberOfParserThreads = 10
+  @@numberOfParserThreads = 8
   def Configuration.numberOfParserThreads
     @@numberOfParserThreads
   end
