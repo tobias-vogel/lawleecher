@@ -4,20 +4,38 @@
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{ae}
-%\usepackage{hyperref}
+\usepackage{hyperref}
 
-\title{Documentation for Law Leecher}
-%\subtitle{Documentation for version 1.1}
-\author{Tobias Vogel\\\url{tobias@vogel.name}}
-\date{\today}
+
+\newcommand{\theTitle}{Documentation for Law Leecher 1.2}
+\newcommand{\theAuthor}{Tobias Vogel}
+
+\hypersetup{
+draft=false,
+pdftitle={\theTitle},
+pdfcreator={\theAuthor},
+pdfauthor={\theAuthor},
+pdfsubject={\theTitle},
+pdfproducer={\theAuthor},
+  linkcolor=black,        % color of internal links
+  citecolor=black,        % color of links to bibliography
+  filecolor=black,           % color of file links
+  urlcolor=black,          % color of external links
+  colorlinks=true
+}
+
 \begin{document}
+
+\title{\theTitle}
+\author{\theAuthor\\\url{tobias@vogel.name}}
+\date{\today}
 
 \maketitle
 
 \begin{abstract}
 This documentation comprises goal, installation instruction, usage manual, implementation details for \textit{Law Leecher}, a tool for retrieving data from the PreLex database.
 
-\textit{Law Leecher} is published under the 3-clause BSD license.\footnote{\url{http://en.wikipedia.org/wiki/BSD_licenses#Terms}}
+\textit{Law Leecher} is published under the 3-clause BSD license.\footnote{\url{http://en.wikipedia.org/wiki/BSD_licenses\#Terms}}
 \end{abstract}
 
 
@@ -25,7 +43,7 @@ This documentation comprises goal, installation instruction, usage manual, imple
 
 
 \section{Preface}
-The decision-making process between institutions in the European Union is documented and freely available under \url{http://ec.europa.eu/prelex/apcnet.cfm?CL=en}. This web page contains about 30,000 laws\footnote{In this document, they are called laws, even they did not evolve to a adopted law.} by October 2009. To drive statistical analysis on this data, it has to be extraced from this web database, first.
+The decision-making process between institutions in the European Union is documented and freely available under \url{http://ec.europa.eu/prelex/apcnet.cfm?CL=en}. This web page contains about 30,000 laws\footnote{In this document, they are called laws, even if they did not evolve to a adopted law.} by October 2009. To drive statistical analysis on this data, it has to be extraced from this web database, first.
 
 To retrieve this structured data, a tool coined \textit{Law Leecher} has been developed. This document fulfills three purposes:
 
