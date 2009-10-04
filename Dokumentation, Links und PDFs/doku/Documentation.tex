@@ -58,6 +58,7 @@ To retrieve this structured data, a tool coined \textit{Law Leecher} has been de
 \section{Extracted Information}
 The details of each law are contained on each law's web page. Figure~\ref{fig:screenshot} shows one of these pages and the pieces of information which are relevant for the crawling. It is annotated with red and black rectangles. The web page always contains some meta information on top, a greenish area below, and finally a number of directly piled up tables which describe the progress of the discussion about the law as a timeline. Each of these tables contains one row with a date stamp and a title and optionally another row with key value pairs. Generally, all HTML markup is removed from the extracted values, e.g., hyperlinks, line breaks, or text formatting and only plain text is saved.
 
+\label{sec:numberingschema}
 \begin{description}
 \item[Rectangle A] contains information which are retrieved as-is and saved under the name ``bluebox.UpperLeftIdentifier''.
 \item[Rectangle B] contains information which are retrieved as-is and saved under the name ``bluebox.UpperCenterIdentifier''.
@@ -65,13 +66,22 @@ The details of each law are contained on each law's web page. Figure~\ref{fig:sc
 \item[Rectangle D] is characterized by a green background color. It always contains four key value pairs. The keys, which are on green background, are ``Fields of activity'', ``Legal basis'', ``Procedures'', and ``Type of file''. Values are on gray background, some of the laws do not possess a value, others contain line breaks, colons, etc. Values are always transformed to simple strings with all HTML markup removed. The name under which the information is saved is ``greenbox.FieldsOfActivity'', ``greenbox.LegalBasis'', ``greenbox.Procedures'', and ``greenbox.TypeOfFile''.
 \item[Rectangle E] is the first table. All key value pairs are read out, for example ``firstbox.Responsible'' or ``firstbox.LegalBasis''. Values for the ``Documents'' key are split and joined with ``, ''.
 \item[Rectangle F] is the last table. It contains several key value pairs, but only the values of ``Documents'', ``Procedures'', ``Type of file'', and ``NUMERO CELEX'' are taken as ``lastbox.Documents'', ``lastbox.Procedures'', ``lastBox.TypeOfFile'', and ``lastbox.NumeroCelex''.
-\label{sec:numberingschema}
 \item[Black rectangles] are used differently. As mentioned above, each table consists of a header row which contains a date stamp and a title, and optionally a second row with some key value pairs. These tables are to be read out while grabbing each table's date stamp, the title and---if existing---the value of the key named ``Decision'' or ``Decision mode''. The title is not saved explicitly. Instead, it serves as the prefix. In the figure's first table, which is ``firstbox'' at the same time, this would be ``Adoption by Commission'' with the suffix ``date'' and the value ``01-10-2004'' and the suffix ``decision'' with the value ``Written procedure''. The difference between ``Decision'' and ``Decision mode'' is irrelevant, so that it is always named ``decision''. However, the prefixes are not necessarily unique within one law. That is why they are extended by three-digit numbers, starting with ``001'' for each title, even if this specific title just occurs once in this law. They are numbered from top to bottom. In the figure, this rule creates the following keys: ``Adoption by Commission001.date'' and ``Adoption by Commission.decision''.
 \item[Further information] are the law's type ``Type'' and the law's id (``ID''). The id is taken from the HTTP request, it does not appear on the page. The type can be derived from ``bluebox.UpperCenterIdentifier''. It is the abbreviation after the second slash and can have the values ``AVC'', ``COD'', ``SYN'', or ''CNS''. If the type is different or not stated in this area, it is put into the set of extracted data but without a value.
 \end{description}
 
+\begin{figure}[ht]
+\begin{center}
+\includegraphics[width = \textwidth]{prelex.png}
+\caption{Website content of law 191763 with annotated relevant sections.}
+\label{fig:screenshot}\end{center}
+\end{figure}
+
+\clearpage
+
 If the list of tables just contains one table, this is not handled differently and thus, the values are extracted twice.
 The full retrieved record for this law would be as follows (noted in a JSON-like notation):
+
 \begin{verbatim}
 {
   ID = 191763,
@@ -139,15 +149,7 @@ The full retrieved record for this law would be as follows (noted in a JSON-like
 \end{verbatim}
 
 
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width = \textwidth]{prelex.png}
-\caption{Website content of law 191763 with annotated relevant sections.}
-\label{fig:screenshot}
-\end{center}
-\end{figure}
-
-\clearpage
+%\clearpage
 
 \section{Installation and Usage}
 \subsection{Installation}
@@ -250,6 +252,4 @@ To find out the optimal number of worker threads and to evaluate the usefulness 
 \subsection{Pitfalls}
 \subsubsection{Interpreter}
 The default ruby interpreter is able to run the full program, currently. However, the JRuby interpreter runs into memory problems with the current implementation. These problems appreared on a 2 GHz dual-core, 4 GB RAM, Ubuntu 9.04 64 Bit machine with the JRuby interpreter set to \texttt{-Xms32m, -Xmx2048m -XX:-UseGCIOverheadLimit}.
-
-akzente é wie?
 \end{document}
