@@ -8,7 +8,7 @@
 23.08.09: 1800-1930 threads einbauen und evaluieren
 23.08.09: 180 minuten threads einbauen und evaluieren
 24.08.09: 90minunten code repariert und refaktoriert
-26.08.09: 2 stunden untere box, aber noch nicht fertig 
+26.08.09: 2 stunden untere box, aber noch nicht fertig
 03.09.09: 1 stunde zeug neu strukturieren (grün, zeitleiste, letztes ding und so)
 04.09.09: 1 stunde zeitleiste
 05.09.09: 3 stunden zeitleiste
@@ -29,10 +29,9 @@
 20.09.09: 3 stunden bugs
 21.09.09: 4 stunden sortierung der spalten
 22.09.09: 1 stunde code aufräumen
+02.10.09: 5,5 stunden doku
+03.10.09: 3,5 stunden gui
+04.10.09: 4,5 stunden doku
 
-2.10.09:  4 stunden + 2230-0000
 
-3.10.09: 1306-
-
-04.10.09: 1100 - 1330  doku  1730-1930 doku
-
+60 Stunden
